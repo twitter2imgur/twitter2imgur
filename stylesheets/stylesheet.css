@@ -325,7 +325,7 @@ Full-Width Styles
   background: url('../images/icon_download.png') no-repeat 0% 90%;
 }
 
-.zip_download_link, .download-link {
+.zip_download_link, .download_link {
   display: block;
   float: right;
   width: 90px;
@@ -346,7 +346,7 @@ Full-Width Styles
   margin-left: 10px;
 }
 
-.zip_download_link:hover, .download-link:hover {
+.zip_download_link:hover, .download_link:hover {
   background: url(../images/sprite_download.png) no-repeat top left;
 }
 
