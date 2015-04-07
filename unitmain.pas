@@ -523,7 +523,7 @@ begin
 
   if not want_exit then begin
    ProgressBar1.Position:=ProgressBar1.Max;
-   ButtonUpdate.Caption:='&Update';
+   ButtonUpdate.Caption:='&Fetch';
    buttonstate:=false;
    set_main_form_control_states;
 
