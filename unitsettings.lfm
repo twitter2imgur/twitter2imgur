@@ -1,30 +1,30 @@
 object FormSettings: TFormSettings
   Left = 350
-  Height = 515
+  Height = 574
   Top = 283
   Width = 448
   AutoSize = True
   BorderStyle = bsDialog
   Caption = 'Settings'
-  ClientHeight = 515
+  ClientHeight = 574
   ClientWidth = 448
   OnShow = FormShow
   Position = poScreenCenter
-  LCLVersion = '1.2.6.0'
+  LCLVersion = '1.6.0.4'
   object GroupBoxTwitterAccount: TGroupBox
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     Left = 8
-    Height = 65
+    Height = 69
     Top = 8
     Width = 432
     Anchors = [akTop, akLeft, akRight]
     AutoSize = True
     BorderSpacing.Around = 8
     Caption = 'Twitter Account'
-    ClientHeight = 47
+    ClientHeight = 49
     ClientWidth = 428
     TabOrder = 0
     object LabelTwitterAccount: TLabel
@@ -32,9 +32,9 @@ object FormSettings: TFormSettings
       AnchorSideLeft.Side = asrBottom
       AnchorSideTop.Control = GroupBoxTwitterAccount
       Left = 40
-      Height = 13
+      Height = 15
       Top = 14
-      Width = 98
+      Width = 110
       BorderSpacing.Top = 6
       BorderSpacing.Bottom = 12
       BorderSpacing.Around = 8
@@ -45,10 +45,10 @@ object FormSettings: TFormSettings
       AnchorSideTop.Control = LabelTwitterAccount
       AnchorSideTop.Side = asrCenter
       AnchorSideRight.Control = ButtonTwitterClear
-      Left = 290
-      Height = 23
+      Left = 287
+      Height = 25
       Top = 9
-      Width = 75
+      Width = 76
       Anchors = [akTop, akRight]
       AutoSize = True
       BorderSpacing.Around = 4
@@ -62,10 +62,10 @@ object FormSettings: TFormSettings
       AnchorSideTop.Side = asrCenter
       AnchorSideRight.Control = GroupBoxTwitterAccount
       AnchorSideRight.Side = asrBottom
-      Left = 369
-      Height = 23
+      Left = 367
+      Height = 25
       Top = 9
-      Width = 51
+      Width = 53
       Anchors = [akTop, akRight]
       AutoSize = True
       BorderSpacing.Right = 4
@@ -80,7 +80,7 @@ object FormSettings: TFormSettings
       AnchorSideTop.Side = asrCenter
       Left = 8
       Height = 24
-      Top = 8
+      Top = 9
       Width = 24
       AutoSize = True
       BorderSpacing.Around = 8
@@ -117,14 +117,14 @@ object FormSettings: TFormSettings
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     Left = 8
-    Height = 65
-    Top = 81
+    Height = 69
+    Top = 85
     Width = 432
     Anchors = [akTop, akLeft, akRight]
     AutoSize = True
     BorderSpacing.Around = 8
     Caption = 'Imgur Account'
-    ClientHeight = 47
+    ClientHeight = 49
     ClientWidth = 428
     TabOrder = 1
     object LabelImgurAccount: TLabel
@@ -132,9 +132,9 @@ object FormSettings: TFormSettings
       AnchorSideLeft.Side = asrBottom
       AnchorSideTop.Control = GroupBoxImgurAccount
       Left = 40
-      Height = 13
+      Height = 15
       Top = 14
-      Width = 92
+      Width = 105
       BorderSpacing.Top = 6
       BorderSpacing.Bottom = 12
       BorderSpacing.Around = 8
@@ -145,10 +145,10 @@ object FormSettings: TFormSettings
       AnchorSideTop.Control = LabelImgurAccount
       AnchorSideTop.Side = asrCenter
       AnchorSideRight.Control = ButtonImgurClear
-      Left = 290
-      Height = 23
+      Left = 287
+      Height = 25
       Top = 9
-      Width = 75
+      Width = 76
       Anchors = [akTop, akRight]
       AutoSize = True
       BorderSpacing.Around = 4
@@ -163,10 +163,10 @@ object FormSettings: TFormSettings
       AnchorSideRight.Control = GroupBoxImgurAccount
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Side = asrBottom
-      Left = 369
-      Height = 23
+      Left = 367
+      Height = 25
       Top = 9
-      Width = 51
+      Width = 53
       Anchors = [akTop, akRight]
       AutoSize = True
       BorderSpacing.Right = 4
@@ -181,7 +181,7 @@ object FormSettings: TFormSettings
       AnchorSideTop.Side = asrCenter
       Left = 8
       Height = 24
-      Top = 8
+      Top = 9
       Width = 24
       AutoSize = True
       BorderSpacing.Around = 8
@@ -211,8 +211,8 @@ object FormSettings: TFormSettings
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = ButtonCancel
     Left = 288
-    Height = 23
-    Top = 464
+    Height = 25
+    Top = 562
     Width = 72
     Anchors = [akTop, akRight]
     AutoSize = True
@@ -229,8 +229,8 @@ object FormSettings: TFormSettings
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     Left = 368
-    Height = 23
-    Top = 464
+    Height = 25
+    Top = 562
     Width = 72
     Anchors = [akTop, akRight]
     AutoSize = True
@@ -248,14 +248,14 @@ object FormSettings: TFormSettings
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     Left = 8
-    Height = 151
-    Top = 305
+    Height = 194
+    Top = 360
     Width = 432
     Anchors = [akTop, akLeft, akRight]
     AutoSize = True
     BorderSpacing.Around = 8
     Caption = 'Window'
-    ClientHeight = 133
+    ClientHeight = 174
     ClientWidth = 428
     TabOrder = 3
     object CheckBoxAlwaysOnTop: TCheckBox
@@ -263,9 +263,9 @@ object FormSettings: TFormSettings
       AnchorSideTop.Control = LabelDefaultAction
       AnchorSideTop.Side = asrBottom
       Left = 16
-      Height = 17
-      Top = 108
-      Width = 126
+      Height = 19
+      Top = 116
+      Width = 140
       BorderSpacing.Left = 8
       BorderSpacing.Top = 4
       BorderSpacing.Right = 8
@@ -280,15 +280,15 @@ object FormSettings: TFormSettings
       AnchorSideTop.Side = asrCenter
       AnchorSideRight.Control = GroupBoxWindow
       AnchorSideRight.Side = asrBottom
-      Left = 200
-      Height = 21
-      Top = 79
-      Width = 220
+      Left = 226
+      Height = 23
+      Top = 85
+      Width = 194
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Top = 4
       BorderSpacing.Right = 8
       BorderSpacing.Bottom = 4
-      ItemHeight = 13
+      ItemHeight = 15
       Items.Strings = (
         'View image (web)'
         'View image (local)'
@@ -302,9 +302,9 @@ object FormSettings: TFormSettings
       AnchorSideTop.Control = LabelURLMode
       AnchorSideTop.Side = asrBottom
       Left = 16
-      Height = 13
-      Top = 83
-      Width = 180
+      Height = 15
+      Top = 89
+      Width = 206
       BorderSpacing.Left = 16
       BorderSpacing.Top = 12
       BorderSpacing.Right = 4
@@ -318,15 +318,15 @@ object FormSettings: TFormSettings
       AnchorSideTop.Side = asrCenter
       AnchorSideRight.Control = GroupBoxWindow
       AnchorSideRight.Side = asrBottom
-      Left = 200
-      Height = 21
-      Top = 54
-      Width = 220
+      Left = 226
+      Height = 23
+      Top = 58
+      Width = 194
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Top = 4
       BorderSpacing.Right = 8
       BorderSpacing.Bottom = 12
-      ItemHeight = 13
+      ItemHeight = 15
       ItemIndex = 0
       Items.Strings = (
         'Imgur page'
@@ -341,9 +341,9 @@ object FormSettings: TFormSettings
       AnchorSideTop.Control = LabelFont
       AnchorSideTop.Side = asrBottom
       Left = 16
-      Height = 13
-      Top = 58
-      Width = 72
+      Height = 15
+      Top = 62
+      Width = 78
       BorderSpacing.Left = 16
       BorderSpacing.Top = 12
       BorderSpacing.Right = 4
@@ -354,9 +354,9 @@ object FormSettings: TFormSettings
       AnchorSideLeft.Control = GroupBoxWindow
       AnchorSideTop.Control = GroupBoxWindow
       Left = 16
-      Height = 13
+      Height = 15
       Top = 8
-      Width = 94
+      Width = 102
       BorderSpacing.Left = 16
       BorderSpacing.Top = 8
       BorderSpacing.Right = 4
@@ -368,10 +368,10 @@ object FormSettings: TFormSettings
       AnchorSideLeft.Side = asrBottom
       AnchorSideTop.Control = EditImageSizeX
       AnchorSideTop.Side = asrCenter
-      Left = 252
-      Height = 13
+      Left = 278
+      Height = 15
       Top = 8
-      Width = 6
+      Width = 5
       BorderSpacing.Around = 4
       Caption = 'x'
       ParentColor = False
@@ -380,8 +380,8 @@ object FormSettings: TFormSettings
       AnchorSideLeft.Control = ComboBoxDefaultAction
       AnchorSideTop.Control = LabelImageSize
       AnchorSideTop.Side = asrCenter
-      Left = 200
-      Height = 21
+      Left = 226
+      Height = 23
       Top = 4
       Width = 48
       TabOrder = 0
@@ -391,8 +391,8 @@ object FormSettings: TFormSettings
       AnchorSideLeft.Side = asrBottom
       AnchorSideTop.Control = LabelImageSize
       AnchorSideTop.Side = asrCenter
-      Left = 262
-      Height = 21
+      Left = 287
+      Height = 23
       Top = 4
       Width = 48
       BorderSpacing.Around = 4
@@ -405,10 +405,10 @@ object FormSettings: TFormSettings
       AnchorSideRight.Control = GroupBoxWindow
       AnchorSideRight.Side = asrBottom
       AnchorSideBottom.Side = asrBottom
-      Left = 200
-      Height = 23
-      Top = 28
-      Width = 220
+      Left = 226
+      Height = 25
+      Top = 30
+      Width = 194
       Anchors = [akTop, akLeft, akRight]
       AutoSize = True
       BorderSpacing.Right = 8
@@ -421,14 +421,29 @@ object FormSettings: TFormSettings
       AnchorSideTop.Control = LabelImageSize
       AnchorSideTop.Side = asrBottom
       Left = 16
-      Height = 13
-      Top = 33
-      Width = 78
+      Height = 15
+      Top = 35
+      Width = 84
       BorderSpacing.Left = 16
       BorderSpacing.Top = 12
       BorderSpacing.Right = 4
       Caption = 'Image List Font:'
       ParentColor = False
+    end
+    object CheckBoxUseTray: TCheckBox
+      AnchorSideLeft.Control = GroupBoxWindow
+      AnchorSideTop.Control = CheckBoxAlwaysOnTop
+      AnchorSideTop.Side = asrBottom
+      Left = 16
+      Height = 19
+      Top = 147
+      Width = 258
+      BorderSpacing.Left = 8
+      BorderSpacing.Top = 4
+      BorderSpacing.Right = 8
+      BorderSpacing.Around = 8
+      Caption = 'Stay running in notification area when closed'
+      TabOrder = 6
     end
   end
   object GroupBoxTransfers: TGroupBox
@@ -438,14 +453,14 @@ object FormSettings: TFormSettings
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     Left = 8
-    Height = 143
-    Top = 154
+    Height = 190
+    Top = 162
     Width = 432
     Anchors = [akTop, akLeft, akRight]
     AutoSize = True
     BorderSpacing.Around = 8
     Caption = 'Transfers'
-    ClientHeight = 125
+    ClientHeight = 170
     ClientWidth = 428
     TabOrder = 2
     object RadioButtonAlbum: TRadioButton
@@ -453,9 +468,9 @@ object FormSettings: TFormSettings
       AnchorSideTop.Control = EditAlbum
       AnchorSideTop.Side = asrCenter
       Left = 28
-      Height = 17
-      Top = 81
-      Width = 51
+      Height = 19
+      Top = 87
+      Width = 59
       BorderSpacing.Left = 28
       BorderSpacing.Right = 4
       Caption = '&Album:'
@@ -467,9 +482,9 @@ object FormSettings: TFormSettings
       AnchorSideTop.Control = EditAlbum
       AnchorSideTop.Side = asrBottom
       Left = 28
-      Height = 17
-      Top = 100
-      Width = 275
+      Height = 19
+      Top = 108
+      Width = 305
       BorderSpacing.Left = 28
       BorderSpacing.Right = 16
       BorderSpacing.Bottom = 8
@@ -482,10 +497,10 @@ object FormSettings: TFormSettings
       AnchorSideTop.Control = LabelAlbum
       AnchorSideTop.Side = asrBottom
       AnchorSideRight.Side = asrBottom
-      Left = 83
-      Height = 21
-      Top = 79
-      Width = 218
+      Left = 91
+      Height = 23
+      Top = 85
+      Width = 210
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Left = 4
       BorderSpacing.Top = 4
@@ -495,9 +510,9 @@ object FormSettings: TFormSettings
       AnchorSideLeft.Control = GroupBoxTransfers
       AnchorSideTop.Control = GroupBoxTransfers
       Left = 16
-      Height = 13
+      Height = 15
       Top = 8
-      Width = 327
+      Width = 359
       BorderSpacing.Left = 16
       BorderSpacing.Top = 8
       BorderSpacing.Right = 16
@@ -511,8 +526,8 @@ object FormSettings: TFormSettings
       AnchorSideTop.Side = asrBottom
       AnchorSideRight.Side = asrBottom
       Left = 28
-      Height = 21
-      Top = 25
+      Height = 23
+      Top = 27
       Width = 273
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Left = 28
@@ -524,14 +539,53 @@ object FormSettings: TFormSettings
       AnchorSideTop.Control = EditLimitByHashtag
       AnchorSideTop.Side = asrBottom
       Left = 16
-      Height = 13
-      Top = 62
-      Width = 285
+      Height = 15
+      Top = 66
+      Width = 321
       BorderSpacing.Left = 16
       BorderSpacing.Top = 16
       BorderSpacing.Right = 16
       BorderSpacing.Bottom = 4
       Caption = 'Place new images in Imgur album (leave blank for no album)'
+      ParentColor = False
+    end
+    object CheckBoxAutoFetch: TCheckBox
+      AnchorSideLeft.Control = GroupBoxTransfers
+      AnchorSideTop.Control = RadioButtonAutoAlbum
+      AnchorSideTop.Side = asrBottom
+      Left = 16
+      Height = 19
+      Top = 143
+      Width = 155
+      BorderSpacing.Left = 16
+      BorderSpacing.Top = 16
+      BorderSpacing.Bottom = 8
+      Caption = 'Automatically &fetch every'
+      OnChange = CheckBoxAutoFetchChange
+      TabOrder = 4
+    end
+    object EditAutoUpdateMins: TEdit
+      AnchorSideLeft.Control = CheckBoxAutoFetch
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = CheckBoxAutoFetch
+      AnchorSideTop.Side = asrCenter
+      Left = 175
+      Height = 23
+      Top = 141
+      Width = 48
+      BorderSpacing.Around = 4
+      TabOrder = 5
+    end
+    object LabelMins: TLabel
+      AnchorSideLeft.Control = EditAutoUpdateMins
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = CheckBoxAutoFetch
+      AnchorSideTop.Side = asrCenter
+      Left = 227
+      Height = 15
+      Top = 145
+      Width = 43
+      Caption = 'minutes'
       ParentColor = False
     end
   end
@@ -541,9 +595,9 @@ object FormSettings: TFormSettings
     AnchorSideTop.Side = asrBottom
     AnchorSideBottom.Side = asrBottom
     Left = 8
-    Height = 23
-    Top = 464
-    Width = 109
+    Height = 25
+    Top = 562
+    Width = 113
     AutoSize = True
     BorderSpacing.Around = 8
     Caption = '&Reset to defaults'
@@ -554,7 +608,7 @@ object FormSettings: TFormSettings
     MinFontSize = 0
     MaxFontSize = 0
     Options = []
-    left = 296
-    top = 432
+    left = 240
+    top = 496
   end
 end

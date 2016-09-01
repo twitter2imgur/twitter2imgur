@@ -1,4 +1,4 @@
-// Copyright 2014, 2015 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
+// Copyright 2014, 2015, 2016 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
 //
 // This file is part of Twitter2Imgur.
 //
@@ -102,7 +102,7 @@ begin
    else if param='oauth_token_secret' then access_token_secret:=value;
   end;
 
-  if MessageDlg('In order to fetch your images, you''ll need to grant this app permission to use your Twitter account (read-only).'#13#13'You''ll now be taken to the Twitter authorization page in your browser so you can authorize it.',mtInformation,[mbOK],0)<>mrOK then exit;
+  if MessageDlg('Information','In order to fetch your images, you''ll need to grant this app permission to use your Twitter account (read-only).'#13#13'You''ll now be taken to the Twitter authorization page in your browser so you can authorize it.',mtInformation,[mbOK],0)<>mrOK then exit;
 
   url:='https://api.twitter.com/oauth/authorize?oauth_token='+access_token;
   OpenURL(url);
@@ -130,7 +130,7 @@ begin
  end;
 
  if not result then MessageDlg('Account authorization failed',info,mtError,[mbOK],0)
- else MessageDlg('Authorization successful! Now using Twitter account "'+twitter_screenname+'".',mtInformation,[mbOK],0);
+ else MessageDlg('Information','Authorization successful! Now using Twitter account "'+twitter_screenname+'".',mtInformation,[mbOK],0);
 end;
 
 function imgur_authorise:boolean; // not threadsafe
@@ -140,7 +140,7 @@ var
   new_token,new_refresh_token,new_screenname,new_expires_in,api_secret:string;
 begin
  result:=false;
- if MessageDlg('In order to upload images, you''ll need to grant this app permission to use your Imgur account.'#13#13'You''ll now be taken to the Imgur authorization page in your browser so you can authorize it.',mtInformation,[mbOK],0)<>mrOK then exit;
+ if MessageDlg('Information','In order to upload images, you''ll need to grant this app permission to use your Imgur account.'#13#13'You''ll now be taken to the Imgur authorization page in your browser so you can authorize it.',mtInformation,[mbOK],0)<>mrOK then exit;
 
  {$ifndef nonplainkeys}api_secret:=imgur_api_secret;{$else}api_secret:=do_(imgur_api_secret_o,imgur_api_secret_k);{$endif}
  url:='https://api.imgur.com/oauth2/authorize?response_type=pin&client_id='+imgur_api_key;
@@ -168,13 +168,13 @@ begin
  end;
 
  if not result then MessageDlg('Account authorization failed',info,mtError,[mbOK],0)
- else MessageDlg('Authorization successful! Now using Imgur account "'+imgur_screenname+'".',mtInformation,[mbOK],0);
+ else MessageDlg('Information','Authorization successful! Now using Imgur account "'+imgur_screenname+'".',mtInformation,[mbOK],0);
 end;
 
 function check_for_app_updates:boolean;
 const
-  update_url_count=3;
-  update_urls:array[0..update_url_count-1] of string=('http://tiny.cc/twitter2imgurupdate','http://tiny.cc/twitter2imgurupdate2','http://lbplevellogger.host.sk/twitter2imgur_update.txt');
+  update_url_count=4;
+  update_urls:array[0..update_url_count-1] of string=('http://tiny.cc/twitter2imgurupdate','http://tiny.cc/twitter2imgurupdate2','http://bit.do/twitter2imgurupdate','https://bit.do/twitter2imgurupdate2');
 var
   tried:array[0..update_url_count-1] of boolean;
   i,i2:integer;
@@ -205,6 +205,7 @@ var
 
 begin
  result:=false;
+ inc(app_update_attempt_count);
  program_update_last_check:=unixtime;
  fillchar(tried,sizeof(tried),0);
  for i:=0 to update_url_count-1 do begin
@@ -234,7 +235,11 @@ begin
     if round(program_update_latestver*1000)>round(app_version*1000) then show_update_notification:=true;
    end;
   end;
-  if result then break;
+  if result then begin
+   last_successful_app_update_check:=unixtime;
+   app_update_attempt_count:=0;
+   break;
+  end;
  end;
 end;
 
@@ -704,10 +709,12 @@ begin
      sl:=TStringList.Create;
      keypath:='';
      parse_json_node(pagedata,keypath,sl);
-     if not fetchresult then begin // failed. token expired?
-      if not auth_retried then if get_json_param(sl,'/data/error',s) then if pos('token',s)>0 then begin // refresh the token and retry
-       auth_retried:=true;
-       if refresh_imgur_token then begin sl.Free; goto retry; end;
+     if not fetchresult then begin // failed
+      if get_json_param(sl,'/data/error',s) then begin
+       if (not auth_retried) and (pos('token',s)>0) then begin // token expired? refresh and retry
+        auth_retried:=true;
+        if refresh_imgur_token then begin sl.Free; goto retry; end;
+       end else errormsg:='Imgur: '+s+' ('+errormsg+')';
       end;
      end else begin
       if (not get_json_param(sl,'/success',s)) or (lowercase(s)<>'true') then begin fetchresult:=false; errormsg:='Invalid response from server'; end
@@ -873,7 +880,7 @@ begin
    size:=http.Document.Size;
    if http.ResultCode<>304 then begin
     setlength(pagedata,size);
-    size:=http.Document.read(pagedata[1],size);
+    if size>0 then size:=http.Document.read(pagedata[1],size);
    end;
    compressedsize:=size;
 
@@ -892,7 +899,7 @@ begin
    end;
 
    if (http.ResultCode=200) or (http.ResultCode=206) then info:='OK ('+l2s(http.Document.Size)+' bytes)'
-   else if (http.ResultCode=301) or (http.ResultCode=302) or (http.ResultCode=307) then begin
+   else if (http.ResultCode=301) or (http.ResultCode=302) or (http.ResultCode=303) or (http.ResultCode=307) or (http.ResultCode=308) then begin
     result:=false;
     if ttl=0 then info:='Too many HTTP redirects ('+l2s(http.ResultCode)+')'
     else begin
@@ -953,7 +960,7 @@ begin
  end else tweet_fetch_info:=info;
  info:='';
 
- if last_app_update_check+24*60*60<unixtime then check_for_app_updates;
+ if app_update_check and (last_app_update_check+24*60*60<unixtime) then check_for_app_updates;
 
  twitter_thread.running:=false;
  // make sure the other threads don't get stuck in a suspended state

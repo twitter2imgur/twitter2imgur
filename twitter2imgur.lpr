@@ -1,4 +1,4 @@
-// Copyright 2014, 2015 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
+// Copyright 2014, 2015, 2016 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
 //
 // This file is part of Twitter2Imgur.
 //
@@ -24,7 +24,35 @@ uses
   {$IFDEF UNIX}
   cthreads,
   {$ENDIF}
-  Interfaces, Forms, unitmain, unitsettings, unitabout, misc, Graphics, Dialogs;
+  Interfaces, Forms, unitmain, unitsettings, unitabout, misc, Graphics, Dialogs, LCLVersion;
+
+function buildinfo:string;
+begin
+ result:={$I %FPCTARGETOS%}+'-'+{$I %FPCTARGETCPU%}+' '+
+  {$ifdef LCLGtk}'GTK'
+   {$else}{$ifdef LCLGtk2}'GTK2'
+    {$else}{$ifdef LCLWin32}'Win32'
+     {$else}{$ifdef LCLWinCE}'WinCE'
+      {$else}{$ifdef LCLCarbon}'Carbon'
+       {$else}{$ifdef LCLQt}'QT'
+        {$else}{$ifdef LCLFpGui}'fpGUI'
+         {$else}{$ifdef LCLNoGui}'NoGUI'
+          {$else}{$ifdef LCLCocoa}'Cocoa'
+           {$else}{$ifdef LCLCustomDrawn}'CustomDrawn'
+           {$else}'?'
+           {$endif}
+          {$endif}
+         {$endif}
+        {$endif}
+       {$endif}
+      {$endif}
+     {$endif}
+    {$endif}
+   {$endif}
+  {$endif}
+ +' LCL'+lcl_version+' FPC'+{$I %FPCVERSION%}+' '+{$I %DATE%};
+ if ssl_version<>'' then result:=result+' '+ssl_version else result:=result+' NO OPENSSL';
+end;
 
 {$R *.res}
 
@@ -34,7 +62,17 @@ begin
   Application.ShowButtonGlyphs:=sbgSystem;
 
   Application.CreateForm(TFormMain, FormMain);
+  FormMain.TrayIcon1.Hint:=Application.Title;
   get_listview_font(default_font_name,default_font_size,default_font_style);
+  {$ifdef Darwin}
+    FormMain.ButtonSettings.BorderSpacing.Bottom:=20;
+    FormMain.BitBtnTwitter.Constraints.MinWidth:=40;
+    FormMain.BitBtnTwitter.BorderSpacing.InnerBorder:=2;
+    FormMain.BitBtnImgur.Constraints.MinWidth:=40;
+    FormMain.BitBtnImgur.BorderSpacing.InnerBorder:=2;
+    FormMain.BitBtnFolder.Constraints.MinWidth:=40;
+    FormMain.BitBtnFolder.BorderSpacing.InnerBorder:=2;
+  {$endif}
 
   Application.CreateForm(TFormSettings, FormSettings);
 
@@ -43,6 +81,7 @@ begin
   FormAbout.LabelTitle.Caption:=FormAbout.LabelTitle.Caption+' v'+app_version_str;
   FormAbout.LabelURL.Caption:=app_url;
   FormAbout.LabelURL.Hint:=app_url;
+  FormAbout.LabelBuildInfo.Caption:='Build info: '+buildinfo;
 
   read_config_file;
   read_images_file;

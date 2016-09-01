@@ -1,6 +1,7 @@
 unit BGRAThumbnail;
 
 {$mode objfpc}{$H+}
+{$i bgrabitmap.inc}
 
 interface
 
@@ -14,12 +15,15 @@ function GetStreamThumbnail(AStream: TStream; AReader: TFPCustomImageReader; AWi
 
 function GetOpenRasterThumbnail(AStream: TStream; AWidth,AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
 function GetLazPaintThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
+function GetPhoxoThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
 function GetJpegThumbnail(AStream: TStream; AWidth,AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
 function GetPsdThumbnail(AStream: TStream; AWidth,AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
 function GetPngThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
 function GetPaintDotNetThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
 function GetBmpThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
+{$IFDEF BGRABITMAP_USE_LCL}
 function GetIcoThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
+{$ENDIF}
 
 function GetPcxThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
 function GetTargaThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
@@ -27,13 +31,14 @@ function GetTiffThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor
 function GetGifThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
 function GetXwdThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
 function GetXPixMapThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
+function GetBmpMioMapThumbnail(AStream: TStream; AWidth, AHeight: integer; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap= nil): TBGRABitmap;
 
 procedure DrawThumbnailCheckers(bmp: TBGRABitmap; ARect: TRect);
 
 implementation
 
-uses Types, GraphType, Graphics, base64, lazutf8classes, LCLProc,
-     DOM, XMLRead, FPReadJPEG, BGRAReadPng, BGRAReadGif, BGRAReadBMP,
+uses Types, base64, BGRAUTF8, {$IFDEF BGRABITMAP_USE_LCL}Graphics, GraphType,{$ENDIF}
+     DOM, XMLRead, BGRAReadJPEG, BGRAReadPng, BGRAReadGif, BGRAReadBMP,
      BGRAReadPSD, BGRAReadIco, UnzipperExt, BGRAReadLzp;
 
 procedure DrawThumbnailCheckers(bmp: TBGRABitmap; ARect: TRect);
@@ -99,17 +104,20 @@ begin
     ifPng: result := GetPngThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
     ifGif: result := GetGifThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
     ifBmp: result := GetBmpThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
+    {$IFDEF BGRABITMAP_USE_LCL}
     ifIco: result := GetIcoThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
+    {$ENDIF}
     ifPcx: result := GetPcxThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
     ifPaintDotNet: result := GetPaintDotNetThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
     ifLazPaint: result := GetLazPaintThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
     ifOpenRaster: result := GetOpenRasterThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
+    ifPhoxo: result := GetPhoxoThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
     ifPsd: result := GetPsdThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
     ifTarga: result := GetTargaThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
     ifTiff: result := GetTiffThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
     ifXwd: result := GetXwdThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
     ifXPixMap: result := GetXPixMapThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
-
+    ifBmpMioMap: result := GetBmpMioMapThumbnail(AStream, AWidth,AHeight, ABackColor, ACheckers, ADest);
     else
       result := nil;
   end;
@@ -173,12 +181,27 @@ begin
   reader.Free;
 end;
 
+function GetPhoxoThumbnail(AStream: TStream; AWidth, AHeight: integer;
+  ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap): TBGRABitmap;
+var
+  reader: TFPCustomImageReader;
+begin
+  if DefaultBGRAImageReader[ifPhoxo] = nil then
+    result := nil
+  else
+  begin
+    reader := CreateBGRAImageReader(ifPhoxo);
+    result := GetStreamThumbnail(AStream, reader, AWidth,AHeight,ABackColor,ACheckers,ADest);
+    reader.Free;
+  end;
+end;
+
 function GetJpegThumbnail(AStream: TStream; AWidth, AHeight: integer
   ; ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap): TBGRABitmap;
 var
-  jpeg: TFPReaderJPEG;
+  jpeg: TBGRAReaderJpeg;
 begin
-  jpeg := TFPReaderJPEG.Create;
+  jpeg := TBGRAReaderJpeg.Create;
   jpeg.Performance := jpBestSpeed;
   jpeg.MinWidth := AWidth;
   jpeg.MinHeight := AHeight;
@@ -326,6 +349,7 @@ begin
   bmpFormat.Free;
 end;
 
+{$IFDEF BGRABITMAP_USE_LCL}
 function GetIcoThumbnail(AStream: TStream; AWidth, AHeight: integer;
   ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap): TBGRABitmap;
 var ico: TIcon; i,bestIdx: integer;
@@ -370,8 +394,7 @@ begin
   end;
   ico.Free;
 end;
-
-
+{$ENDIF}
 
 function GetPcxThumbnail(AStream: TStream; AWidth, AHeight: integer;
   ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap): TBGRABitmap;
@@ -429,6 +452,16 @@ var
   reader: TFPCustomImageReader;
 begin
   reader:= CreateBGRAImageReader(ifXPixMap);
+  result := GetStreamThumbnail(AStream,reader,AWidth,AHeight,ABackColor,ACheckers,ADest);
+  reader.Free;
+end;
+
+function GetBmpMioMapThumbnail(AStream: TStream; AWidth, AHeight: integer;
+  ABackColor: TBGRAPixel; ACheckers: boolean; ADest: TBGRABitmap): TBGRABitmap;
+var
+  reader: TFPCustomImageReader;
+begin
+  reader:= CreateBGRAImageReader(ifBmpMioMap);
   result := GetStreamThumbnail(AStream,reader,AWidth,AHeight,ABackColor,ACheckers,ADest);
   reader.Free;
 end;

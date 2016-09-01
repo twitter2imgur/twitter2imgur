@@ -1,4 +1,4 @@
-// Copyright 2014, 2015 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
+// Copyright 2014, 2015, 2016 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
 //
 // This file is part of Twitter2Imgur.
 //
@@ -77,8 +77,8 @@ const
 //  app_url='https://code.google.com/p/twitter2imgur/';
   app_url='http://twitter2imgur.github.io/twitter2imgur/';
   app_download_url=app_url;
-  app_version=1.02;
-  app_version_str='1.02';
+  app_version=1.03;
+  app_version_str='1.03';
 
   ini_line_junk=0;
   ini_line_section=1;
@@ -103,7 +103,7 @@ type
 
 var
   img_list_CS:system.TRTLCriticalSection;
-  configdir,imagesdir:string;
+  configdir,imagesdir,thumbsdir:string;
   epoch:tdatetime;
 
   img_list:^img_list_type=nil;
@@ -150,17 +150,25 @@ var
   default_action:longint=0;
   auto_upload_album:boolean=false;
   always_on_top:boolean=false;
+  use_systray:boolean=false;
   url_mode:longint=0;
   thumbnail_width:longint=thumbnail_width_default;
   thumbnail_height:longint=thumbnail_height_default;
+  auto_fetch:boolean=false;
+  auto_fetch_mins:longint=30;
   window_coords:array[0..3] of longint;
   window_maximised:boolean=false;
   font_override:boolean=false;
   no_img_desc:boolean=false;
+  cache_thumbnails:boolean=true;
 
   ssl_version:string;
 
   last_app_update_check:longint=0;
+  last_successful_app_update_check:longint=0;
+  app_update_attempt_count:longint=0;
+  app_update_check:boolean=true;
+  current_fetch_is_auto:boolean;
 
 implementation
 
@@ -290,7 +298,7 @@ var
   filename,line,param,value,s,s2:string;
   t:text;
   i,section:integer;
-  l:longint;
+  l,l2:longint;
   formrect:TRect;
   monitor:TMonitor;
   bl:boolean;
@@ -319,15 +327,19 @@ begin
       else if param='imgur token' then imgur_access_token:=do_(value,'c-GA|,MQ(P+9;G\Zx}dN*c0O/zBm+J]8')
       else if param='imgur refresh token' then imgur_refresh_token:=do_(value,'6m-wh0^my$O*I6bG9}qJ:g[$Z<4wW1wa')
       else if param='imgur token expiry' then s2l(value,imgur_token_expiry)
+      else if param='auto fetch' then auto_fetch:=value='1'
+      else if param='auto fetch mins' then s2l(value,auto_fetch_mins)
       else if param='album' then upload_album:=value
       else if param='auto album' then auto_upload_album:=value='1'
       else if param='last update' then s2l(value,last_update)
       else if param='always on top' then always_on_top:=value='1'
+      else if param='use systray' then use_systray:=value='1'
       else if param='default action' then begin
        if value='1' then default_action:=1 else if value='2' then default_action:=2 else default_action:=0;
       end else if param='limit hashtags' then limit_hashtags:=value
       else if param='url mode' then s2l(value,url_mode)
       else if param='no image description' then no_img_desc:=value='1'
+      else if param='cache thumbnails' then cache_thumbnails:=value='1'
       else if param='thumbnail size' then begin
        if s2l(str_firstparam(value,true,','),l) then if (l>=0) and (l<=1000) then thumbnail_width:=l;
        if s2l(str_firstparam(value,true,','),l) then if (l>=0) and (l<=1000) then thumbnail_height:=l;
@@ -369,6 +381,12 @@ begin
 
         FormMain.ListViewFiles.Font.Name:=value; // name
        end;
+      end else if param='app update' then begin
+       s2:=str_firstparam(value,true,',');
+       if s2l(s2,l) and s2l(value,l2) then begin
+        last_successful_app_update_check:=l;
+        app_update_attempt_count:=l2;
+       end;
       end;
      end;
     end;
@@ -388,7 +406,7 @@ var
 begin
  tempname:=configdir+'config.'+l2s(unixtime)+'.tmp';
  filename:=configdir+'config.ini';
- if not DirectoryExists(configdir) then forcedirectories(configdir);
+ if not DirectoryExists(configdir) then ForceDirectories(configdir);
  assign(t,tempname);
  rewrite(t);
  writeln(t,'[options]');
@@ -400,11 +418,14 @@ begin
  writeln(t,'imgur token='+o_(imgur_access_token,'c-GA|,MQ(P+9;G\Zx}dN*c0O/zBm+J]8'));
  writeln(t,'imgur refresh token='+o_(imgur_refresh_token,'6m-wh0^my$O*I6bG9}qJ:g[$Z<4wW1wa'));
  writeln(t,'imgur token expiry='+l2s(imgur_token_expiry));
+ if auto_fetch then writeln(t,'auto fetch=1') else writeln(t,'auto fetch=0');
+ writeln(t,'auto fetch mins='+l2s(auto_fetch_mins));
  writeln(t,'limit hashtags='+limit_hashtags);
  writeln(t,'album='+upload_album);
  if auto_upload_album then writeln(t,'auto album=1') else writeln(t,'auto album=0');
  writeln(t,'last update='+l2s(last_update));
  if always_on_top then writeln(t,'always on top=1') else writeln(t,'always on top=0');
+ if use_systray then writeln(t,'use systray=1') else writeln(t,'use systray=0');
  writeln(t,'default action='+l2s(default_action));
  writeln(t,'url mode='+l2s(url_mode));
  writeln(t,'thumbnail size='+l2s(thumbnail_width)+','+l2s(thumbnail_height));
@@ -414,7 +435,9 @@ begin
   get_listview_font(s,fontsize,fontstyle);
   writeln(t,'list font='+fontstr(s,fontsize,fontstyle,false));
  end;
+ writeln(t,'app update='+l2s(last_successful_app_update_check)+','+l2s(app_update_attempt_count));
  if no_img_desc then writeln(t,'no image description=1');
+ if not cache_thumbnails then writeln(t,'cache thumbnails=0');
  close(t);
  if ioresult=0 then begin
   deletefile(PChar(filename));
@@ -492,7 +515,7 @@ var
 begin
  tempname:=configdir+'images.'+l2s(unixtime)+'.tmp';
  filename:=configdir+'images.ini';
- if not DirectoryExists(configdir) then forcedirectories(configdir);
+ if not DirectoryExists(configdir) then ForceDirectories(configdir);
  assign(t,tempname);
  rewrite(t);
  for l:=0 to img_list_count-1 do begin
@@ -865,12 +888,15 @@ function load_image_thumbnails(p:pointer):ptrint; // secondary thread
 var
   l:longint;
   bmp:TBGRABitmap;
-  id,localfile:string;
+  id,localfile,cachefile:string;
   id_:^string;
+  cache,success:boolean;
 begin
  system.EnterCriticalSection(img_list_CS); // clear "tried" flag
  for l:=0 to img_list_count-1 do img_list[l].flags:=img_list[l].flags and (not word(job_flag_thumbnail_tried));
  system.LeaveCriticalSection(img_list_CS);
+
+ if cache_thumbnails then if not DirectoryExists(thumbsdir) then ForceDirectories(thumbsdir);
 
  repeat
   id:='';
@@ -894,20 +920,37 @@ begin
     sleep(10);
    end;
   end else begin
-   try
-    bmp:=TBGRABitmap.Create(imagesdir+localfile);
+   success:=false;
+   cache:=cache_thumbnails;
+   cachefile:=ChangeFileExt(thumbsdir+'thumb_'+localfile,'.png'); // always save thumbnails as png
+   repeat
+    try
+     if cache then begin
+      bmp:=TBGRABitmap.Create(cachefile);
+      success:=(bmp.Width=thumbnail_width) and (bmp.height=thumbnail_height);
+     end else begin
+      bmp:=TBGRABitmap.Create(imagesdir+localfile);
+      success:=resample_image(bmp,true);
+     end;
 
-    if resample_image(bmp,true) then begin
-     getmem(id_,sizeof(string));
-     fillchar(id_^,sizeof(string),0);
-     id_^:=id;
-     // adding an image to the imagelist from this thread works on windows, but can crash on linux if the listview is being repainted at the time
-     LCLIntf.PostMessage(FormMain.Handle,windowmsg_thumbnail_loaded,ptrint(bmp),ptrint(id_));
-     // don't free bmp or id_, they will be freed by TFormMain.HandleThreadMsg_thumbnail_loaded
-    end else bmp.Free;
-   except
-    On E: Exception do;
-   end;
+     if success then begin
+      if (not cache) and cache_thumbnails then try
+       bmp.SaveToFileUTF8(cachefile);
+      except
+       On E: Exception do;
+      end;
+      getmem(id_,sizeof(string));
+      fillchar(id_^,sizeof(string),0);
+      id_^:=id;
+      // adding an image to the imagelist from this thread works on windows, but can crash on linux if the listview is being repainted at the time
+      LCLIntf.PostMessage(FormMain.Handle,windowmsg_thumbnail_loaded,ptrint(bmp),ptrint(id_));
+      // don't free bmp or id_, they will be freed by TFormMain.HandleThreadMsg_thumbnail_loaded
+     end else bmp.Free;
+    except
+     On E: Exception do;
+    end;
+    cache:=not cache;
+   until success or cache;
   end;
  until false;
  thumbnail_thread.running:=false;
@@ -1037,6 +1080,7 @@ begin
 
  configdir:=IncludeTrailingPathDelimiter(GetAppConfigDir(false));
  imagesdir:=IncludeTrailingPathDelimiter(configdir+'images');
+ thumbsdir:=IncludeTrailingPathDelimiter(configdir+'thumbs');
 
  system.InitCriticalSection(img_list_CS);
 

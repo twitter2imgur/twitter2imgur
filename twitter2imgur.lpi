@@ -20,8 +20,8 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="1"/>
-      <RevisionNr Value="2"/>
-      <StringTable FileDescription="Twitter2Imgur" InternalName="Twitter2Imgur" LegalCopyright="Copyright 2014, 2015" ProductName="Twitter2Imgur" ProductVersion="1.02"/>
+      <RevisionNr Value="3"/>
+      <StringTable FileDescription="Twitter2Imgur" InternalName="Twitter2Imgur" LegalCopyright="Copyright 2014, 2015, 2016" ProductName="Twitter2Imgur" ProductVersion="1.03"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>
@@ -55,12 +55,6 @@
               </Win32>
             </Options>
           </Linking>
-          <Other>
-            <CompilerMessages>
-              <MsgFileName Value=""/>
-            </CompilerMessages>
-            <CompilerPath Value="$(CompPath)"/>
-          </Other>
         </CompilerOptions>
       </Item2>
     </BuildModes>
@@ -84,7 +78,6 @@
       <Unit0>
         <Filename Value="twitter2imgur.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="twitter2imgur"/>
       </Unit0>
       <Unit1>
         <Filename Value="unitmain.pas"/>
@@ -92,17 +85,14 @@
         <ComponentName Value="FormMain"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="unitmain"/>
       </Unit1>
       <Unit2>
         <Filename Value="http.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="http"/>
       </Unit2>
       <Unit3>
         <Filename Value="misc.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="misc"/>
       </Unit3>
       <Unit4>
         <Filename Value="unitsettings.pas"/>
@@ -110,12 +100,10 @@
         <ComponentName Value="FormSettings"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="unitsettings"/>
       </Unit4>
       <Unit5>
         <Filename Value="oauth.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="oauth"/>
       </Unit5>
       <Unit6>
         <Filename Value="unitabout.pas"/>
@@ -123,7 +111,6 @@
         <ComponentName Value="FormAbout"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="unitabout"/>
       </Unit6>
     </Units>
   </ProjectOptions>
@@ -145,11 +132,5 @@
         </Win32>
       </Options>
     </Linking>
-    <Other>
-      <CompilerMessages>
-        <MsgFileName Value=""/>
-      </CompilerMessages>
-      <CompilerPath Value="$(CompPath)"/>
-    </Other>
   </CompilerOptions>
 </CONFIG>

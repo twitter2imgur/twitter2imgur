@@ -110,7 +110,7 @@ var
 
   moji_hex :String[4]='';
   moji:WideString='';      // Holds new char as UTF16
-
+  moji_int,moji_int_save:integer;
 
   Procedure Moji_Process;
    begin
@@ -122,17 +122,34 @@ var
              Moji_Hex := '';
              // get the next four chars
              Moji_Hex := Upcase(Copy(JSONData, ptr, 4));
-             Moji := '';
-              // Convert from Hex to Unicode
-             Moji := WideChar(StrToInt('$'+Moji_Hex));
-             Result := Result + UTF8Encode(Moji);                // Add the result to output
+//             Moji := '';
+
+             // Changes by Doctor_Colossus:
+             // D800-DBFF are only valid when followed by a DC00-DFFF, so can't be UTF8Encoded one widechar at a time.
+             // So for D800..DBFF, save the moji and encode both widechars at once when we get the DC00..DFFF next time.
+             moji_int:=StrToInt('$'+Moji_Hex); // might go bad with 16 bit integers?
+             if (moji_int>=$DC00) and (moji_int<=$DFFF) and (moji_int_save<>0) then begin // second part
+              Moji:=WideChar(moji_int_save)+WideChar(moji_int);
+              Result:=Result+UTF8Encode(Moji);
+              moji_int_save:=0;
+             end else if (moji_int>=$D800) and (moji_int<=$DBFF) then begin // first part
+              moji_int_save:=moji_int;
+             end else begin // regular moji
+              Moji:=WideChar(moji_int);
+              Result:=Result+UTF8Encode(Moji);
+              moji_int_save:=0;
+             end;
+
+             // Convert from Hex to Unicode
+//             Moji := WideChar(StrToInt('$'+Moji_Hex));
+//             Result := Result + UTF8Encode(Moji);                // Add the result to output
              Inc(ptr, 3); // Skip past this part of the input string.
            End;  // of CASE U
-      'n':result:=result+#10; // new line
-      'r':result:=result+#13; // carriage return
-      't':result:=result+#9; // tab
+      'n':begin result:=result+#10; moji_int_save:=0; end; // new line
+      'r':begin result:=result+#13; moji_int_save:=0; end; // carriage return
+      't':begin result:=result+#9; moji_int_save:=0; end; // tab
       else
-          Result := Result + JSONData[ptr];     // It was something else like /", //, etc.
+          begin Result := Result + JSONData[ptr]; moji_int_save:=0; end;    // It was something else like /", //, etc.
     END;    // of CASE
    end; // of [sub]Procedure
 
@@ -146,7 +163,7 @@ begin
            // It's a /, so we check the next character
           '\':  Moji_Process;
         else
-          Result := Result + JSONData[ptr];
+          begin Result := Result + JSONData[ptr]; moji_int_save:=0; end;
         End;
         Inc(ptr);
       End; // of WHILE
@@ -306,6 +323,14 @@ Function JSON2StringList(const JSONString:AnsiString; VAR Decoded:TStringList):I
          End; // of CASE
 //           Writeln('JSON2StringList>>', 'Pos:', pos, 'NestCount:', NestCount);
       end;  // of FOR
+
+  // !!!! HACK - is reddit json malformed? not closing braces? this works around it
+  if nestcount>1 then begin
+   TmpStr := Trim(CopyStop(JSONString, CopyPos+1, length(jsonstring)));        //@002+
+   Decoded.Append(TmpStr);
+  end;
+  // !!!!
+
    Result := 0;
 //   Writeln('Item Count:' + IntToStr(Decoded.Count));
 //   Writeln('JSON2StringList: End.');

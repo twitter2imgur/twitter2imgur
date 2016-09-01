@@ -2,7 +2,7 @@
 License for Twitter2Imgur
 -------------------------------------------------------------------------------
 
-Copyright 2014, 2015 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
+Copyright 2014, 2015, 2016 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007

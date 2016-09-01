@@ -1,4 +1,4 @@
-// Copyright 2014, 2015 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
+// Copyright 2014, 2015, 2016 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
 //
 // This file is part of Twitter2Imgur.
 //
@@ -37,9 +37,12 @@ type
     ButtonImgurAccount: TButton;
     ButtonTwitterAccount: TButton;
     ButtonImgurClear: TButton;
+    CheckBoxUseTray: TCheckBox;
+    CheckBoxAutoFetch: TCheckBox;
     CheckBoxAlwaysOnTop: TCheckBox;
     ComboBoxURLMode: TComboBox;
     ComboBoxDefaultAction: TComboBox;
+    EditAutoUpdateMins: TEdit;
     EditImageSizeX: TEdit;
     EditImageSizeY: TEdit;
     EditLimitByHashtag: TEdit;
@@ -51,6 +54,7 @@ type
     GroupBoxImgurAccount: TGroupBox;
     ImageTwitter: TImage;
     ImageImgur: TImage;
+    LabelMins: TLabel;
     LabelFont: TLabel;
     LabelImageSize: TLabel;
     LabelImageSizeBy: TLabel;
@@ -70,6 +74,7 @@ type
     procedure ButtonResetClick(Sender: TObject);
     procedure ButtonTwitterAccountClick(Sender: TObject);
     procedure ButtonTwitterClearClick(Sender: TObject);
+    procedure CheckBoxAutoFetchChange(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure RadioButtonAlbumChange(Sender: TObject);
   private
@@ -117,6 +122,7 @@ begin
   FormSettings.ButtonImgurClear.Enabled:=false;
  end;
 
+ FormSettings.EditAutoUpdateMins.Enabled:=FormSettings.CheckBoxAutoFetch.Checked;
  FormSettings.EditAlbum.Enabled:=FormSettings.RadioButtonAlbum.Checked;
  FormSettings.ButtonFont.Caption:=fontstr(font_name,font_size,font_style,true);
 end;
@@ -126,16 +132,20 @@ begin
  font_changed:=false;
  font_reset:=false;
  get_listview_font(font_name,font_size,font_style);
+ CheckBoxAutoFetch.Checked:=auto_fetch;
+ EditAutoUpdateMins.Text:=l2s(auto_fetch_mins);
  EditLimitByHashtag.Text:=limit_hashtags;
  EditAlbum.Text:=upload_album;
  RadioButtonAlbum.Checked:=not auto_upload_album;
  RadioButtonAutoAlbum.Checked:=auto_upload_album;
  CheckBoxAlwaysOnTop.Checked:=always_on_top;
+ CheckBoxUseTray.Checked:=use_systray;
  if (default_action>=0) and (default_action<=2) then ComboBoxDefaultAction.ItemIndex:=default_action;
  if (url_mode>=0) and (url_mode<=1) then ComboBoxURLMode.ItemIndex:=url_mode;
  EditImageSizeX.Text:=l2s(thumbnail_width);
  EditImageSizeY.Text:=l2s(thumbnail_height);
  set_settings_form_control_states;
+ ButtonCancel.SetFocus;
 end;
 
 procedure TFormSettings.RadioButtonAlbumChange(Sender: TObject);
@@ -154,7 +164,7 @@ end;
 
 procedure TFormSettings.ButtonTwitterClearClick(Sender: TObject);
 begin
- if MessageDlg('Forget Twitter account "'+twitter_screenname+'"?',mtConfirmation,[mbYes,mbNo],0)=mrYes then begin
+ if MessageDlg('Confirmation','Forget Twitter account "'+twitter_screenname+'"?',mtConfirmation,[mbYes,mbNo],0)=mrYes then begin
   twitter_token:='';
   twitter_token_secret:='';
   twitter_screenname:='';
@@ -162,6 +172,11 @@ begin
   set_main_form_control_states;
   write_config_file;
  end;
+end;
+
+procedure TFormSettings.CheckBoxAutoFetchChange(Sender: TObject);
+begin
+ set_settings_form_control_states;
 end;
 
 procedure TFormSettings.ButtonCancelClick(Sender: TObject);
@@ -196,7 +211,7 @@ end;
 
 procedure TFormSettings.ButtonImgurClearClick(Sender: TObject);
 begin
- if MessageDlg('Forget Imgur account "'+imgur_screenname+'"?',mtConfirmation,[mbYes,mbNo],0)=mrYes then begin
+ if MessageDlg('Confirmation','Forget Imgur account "'+imgur_screenname+'"?',mtConfirmation,[mbYes,mbNo],0)=mrYes then begin
   imgur_access_token:='';
   imgur_refresh_token:='';
   imgur_screenname:='';
@@ -211,10 +226,15 @@ end;
 procedure TFormSettings.ButtonOKClick(Sender: TObject);
 var x,y:longint;
 begin
+ auto_fetch:=CheckBoxAutoFetch.Checked;
+ if s2l(EditAutoUpdateMins.Text,auto_fetch_mins) then begin
+  if auto_fetch_mins<1 then auto_fetch_mins:=1 else if auto_fetch_mins>10080 then auto_fetch_mins:=10080;
+ end else auto_fetch_mins:=30;
  limit_hashtags:=EditLimitByHashtag.Text;
  upload_album:=FormSettings.EditAlbum.Text;
  auto_upload_album:=not FormSettings.RadioButtonAlbum.Checked;
  always_on_top:=CheckBoxAlwaysOnTop.Checked;
+ use_systray:=CheckBoxUseTray.Checked;
  if always_on_top then begin
   FormMain.FormStyle:=fsSystemStayOnTop;
   FormSettings.FormStyle:=fsSystemStayOnTop;
@@ -238,6 +258,7 @@ begin
   if thumbnail_thread.started then begin // don't mess with the thumbnail imagelist while thumbnails are being generated
    thumbnail_thread.abort:=true;
    while thumbnail_thread.running do sleep(20);
+   Application.ProcessMessages; // ensures thumbnails thread is closed before proceeding so it can be restarted immediately
   end;
   thumbnail_width:=x;
   thumbnail_height:=y;
@@ -269,6 +290,9 @@ end;
 
 procedure TFormSettings.ButtonResetClick(Sender: TObject);
 begin
+ CheckBoxAutoFetch.Checked:=false;
+ EditAutoUpdateMins.Text:='30';
+
  EditLimitByhashTag.Text:='';
  RadioButtonAlbum.Checked:=true;
  EditAlbum.Text:='';
@@ -284,6 +308,7 @@ begin
  ComboBoxURLMode.ItemIndex:=0;
  ComboBoxDefaultAction.ItemIndex:=0;
  CheckBoxAlwaysOnTop.Checked:=false;
+ CheckBoxUseTray.Checked:=false;
 
  set_settings_form_control_states;
 end;

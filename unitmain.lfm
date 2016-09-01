@@ -16,7 +16,7 @@ object FormMain: TFormMain
   OnShow = FormShow
   OnWindowStateChange = FormWindowStateChange
   Position = poScreenCenter
-  LCLVersion = '1.2.6.0'
+  LCLVersion = '1.6.0.4'
   object ProgressBar1: TProgressBar
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = LabelProgress
@@ -26,7 +26,7 @@ object FormMain: TFormMain
     AnchorSideBottom.Side = asrBottom
     Left = 8
     Height = 24
-    Top = 25
+    Top = 27
     Width = 200
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Left = 4
@@ -45,7 +45,7 @@ object FormMain: TFormMain
     AnchorSideBottom.Control = ProgressBar1
     AnchorSideBottom.Side = asrBottom
     Left = 216
-    Height = 41
+    Height = 43
     Top = 8
     Width = 96
     Anchors = [akTop, akRight, akBottom]
@@ -61,10 +61,12 @@ object FormMain: TFormMain
   object LabelProgress: TLabel
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = ButtonUpdate
     Left = 8
-    Height = 13
+    Height = 15
     Top = 8
-    Width = 42
+    Width = 200
+    Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Left = 4
     BorderSpacing.Top = 4
     BorderSpacing.Around = 4
@@ -76,10 +78,10 @@ object FormMain: TFormMain
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 247
-    Height = 23
-    Top = 487
-    Width = 65
+    Left = 244
+    Height = 25
+    Top = 485
+    Width = 68
     Anchors = [akRight, akBottom]
     AutoSize = True
     BorderSpacing.Top = 8
@@ -97,8 +99,8 @@ object FormMain: TFormMain
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = LabelStatusBar2
     Left = 8
-    Height = 396
-    Top = 70
+    Height = 388
+    Top = 74
     Width = 304
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Left = 8
@@ -131,9 +133,9 @@ object FormMain: TFormMain
     AnchorSideTop.Control = ButtonUpdate
     AnchorSideTop.Side = asrBottom
     Left = 8
-    Height = 13
-    Top = 53
-    Width = 72
+    Height = 15
+    Top = 55
+    Width = 77
     BorderSpacing.Left = 4
     BorderSpacing.Around = 4
     Caption = 'Recent Images'
@@ -144,10 +146,10 @@ object FormMain: TFormMain
     AnchorSideTop.Control = ButtonUpdate
     AnchorSideTop.Side = asrCenter
     AnchorSideRight.Side = asrBottom
-    Left = 22
-    Height = 13
+    Left = 23
+    Height = 15
     Top = 22
-    Width = 68
+    Width = 66
     Anchors = [akTop]
     BorderSpacing.Around = 12
     Caption = 'Last Update'
@@ -160,10 +162,10 @@ object FormMain: TFormMain
     AnchorSideRight.Control = BitBtnImgur
     AnchorSideBottom.Control = ButtonSettings
     AnchorSideBottom.Side = asrBottom
-    Left = 145
-    Height = 23
+    Left = 142
+    Height = 25
     Hint = 'Go to Twitter'
-    Top = 487
+    Top = 485
     Width = 32
     Anchors = [akTop, akRight, akBottom]
     AutoSize = True
@@ -217,10 +219,10 @@ object FormMain: TFormMain
     AnchorSideRight.Control = BitBtnFolder
     AnchorSideBottom.Control = ButtonSettings
     AnchorSideBottom.Side = asrBottom
-    Left = 179
-    Height = 23
+    Left = 176
+    Height = 25
     Hint = 'Go to Imgur'
-    Top = 487
+    Top = 485
     Width = 32
     Anchors = [akTop, akRight, akBottom]
     AutoSize = True
@@ -270,7 +272,7 @@ object FormMain: TFormMain
     TabOrder = 5
   end
   object ImageDefaultImage: TImage
-    Left = 160
+    Left = 112
     Height = 32
     Top = 0
     Width = 32
@@ -351,15 +353,13 @@ object FormMain: TFormMain
   end
   object ButtonAbout: TButton
     AnchorSideLeft.Control = Owner
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
+    AnchorSideTop.Control = ButtonSettings
     Left = 8
-    Height = 23
-    Top = 487
-    Width = 55
-    Anchors = [akLeft, akBottom]
+    Height = 25
+    Top = 485
+    Width = 59
     AutoSize = True
-    BorderSpacing.Around = 8
+    BorderSpacing.Left = 8
     Caption = '&About'
     OnClick = ButtonAboutClick
     TabOrder = 3
@@ -369,10 +369,10 @@ object FormMain: TFormMain
     AnchorSideRight.Control = ButtonSettings
     AnchorSideBottom.Control = ButtonSettings
     AnchorSideBottom.Side = asrBottom
-    Left = 213
-    Height = 23
+    Left = 210
+    Height = 25
     Hint = 'Open local images folder'
-    Top = 487
+    Top = 485
     Width = 32
     Anchors = [akTop, akRight, akBottom]
     AutoSize = True
@@ -428,8 +428,8 @@ object FormMain: TFormMain
     AnchorSideBottom.Control = LabelStatusBar2
     AnchorSideBottom.Side = asrBottom
     Left = 8
-    Height = 13
-    Top = 466
+    Height = 15
+    Top = 462
     Width = 293
     Anchors = [akTop, akLeft, akRight, akBottom]
     AutoSize = False
@@ -442,8 +442,8 @@ object FormMain: TFormMain
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = ButtonSettings
     Left = 309
-    Height = 13
-    Top = 466
+    Height = 15
+    Top = 462
     Width = 3
     Anchors = [akRight, akBottom]
     BorderSpacing.Left = 8
@@ -451,7 +451,7 @@ object FormMain: TFormMain
     ParentColor = False
   end
   object PopupMenuImages: TPopupMenu
-    left = 96
+    left = 56
     object MenuItemViewURL: TMenuItem
       Caption = '&View pic (web)'
       Default = True
@@ -460,6 +460,10 @@ object FormMain: TFormMain
     object MenuItemViewLocal: TMenuItem
       Caption = 'View &pic (local)'
       OnClick = MenuItemViewLocalClick
+    end
+    object MenuItemOpenFolder: TMenuItem
+      Caption = '&Open folder'
+      OnClick = MenuItemOpenFolderClick
     end
     object MenuItemSeparator: TMenuItem
       Caption = '-'
@@ -470,8 +474,63 @@ object FormMain: TFormMain
     end
   end
   object Timer1: TTimer
-    Interval = 60000
+    Interval = 2000
     OnTimer = Timer1Timer
-    left = 128
+    left = 88
+  end
+  object TrayIcon1: TTrayIcon
+    PopUpMenu = PopupMenuTray
+    Icon.Data = {
+      7E03000000000100010010100000010018006803000016000000280000001000
+      0000200000000100180000000000000300006400000064000000000000000000
+      00001E1E1E0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F
+      0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F1E1E1E0B0B0B0000000000000000000000
+      000000000000000000000000000000000000000000000000000000000000000B
+      0B0B0F0F0F000000000000000000000000000000000000000000000000000000
+      000000000000555555F8F8F85B5B5B0F0F0F3E3322967742DEB162F4C26CE9B9
+      67C89F59856A3B221B0F000000000000000000000000ABABACFFFFFFADADAE0F
+      0F0F1E1B16261E11624E2BE1B364FFCB71FFCB71FFCB71EEBD695E4B2A000000
+      000000000000ABABABFFFFFFADADAD0F0F0F0F0F0F1C160CA7854AF7C56DFFCB
+      71FFCB71FFCB71FFCB71FECA715A4828000000000000ABABABFFFFFFADADAD0F
+      0F0F0F0F0F634F2CFFCB71FFCB71FFCB71FFCB71FFCB71FFCB71FFCB71E2B464
+      1C160C000000ABABABFFFFFFADADAD0F0F0F372E1FDCAF61FFCB71FFCB71FFCB
+      71FFCB71FFCB71FFCB71FFCB71FFCB71725B33000000ABABABFFFFFFADADAD0F
+      0F0F58472DF0BF6AFFCB71FFCB71FFCB71FFCB71FFCB71FFCB71FFCB71FFCB71
+      AB884C000000ADADADFFFFFFB0B0B00F0F0F51422AFCC970FECA71B59050634F
+      2C66512DF9C66EFFCB71FFCB71FFCB71CCA25A0D0A06949294FFFFFF9593940F
+      0F0F846B3FE5B66541341D000000000000130F08E0B263FFCB71FFCB71FFCB71
+      FDC97067522E14171566746C1518160F0F0F382F1F231C100000000000000000
+      0000000045371FD3A85EF1C06BA7854A67522E44361E184C2E2FA9641950300F
+      0F0F0F0F0F000000000000000000000000000000000000000000000000000000
+      00000000000038CC783EE98938CD780F0F0F0F0F0F0000000000000000000000
+      000000000000000000000000000000000000000000002169403DDF84226D420F
+      0F0F0B0B0B000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000B0B0B1E1E1E0F0F0F0F0F0F0F0F0F0F0F
+      0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F0F1E
+      1E1E000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000
+    }
+    OnClick = TrayIcon1Click
+    left = 144
+  end
+  object PopupMenuTray: TPopupMenu
+    left = 168
+    object MenuItemShow: TMenuItem
+      Caption = '&Show'
+      Default = True
+      OnClick = MenuItemShowClick
+    end
+    object MenuItemFetch: TMenuItem
+      Caption = '&Fetch'
+      OnClick = MenuItemFetchClick
+    end
+    object MenuItemSep: TMenuItem
+      Caption = '-'
+    end
+    object MenuItemExit: TMenuItem
+      Caption = 'E&xit'
+      OnClick = MenuItemExitClick
+    end
   end
 end

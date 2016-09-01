@@ -16,9 +16,13 @@ uses
   BGRASliceScaling, BGRASSE, BGRAStreamLayers, BGRAText, BGRATextFX, 
   BGRATransform, BGRATypewriter, BGRAVectorize, BGRAGrayscaleMask, 
   BGRAReadBMP, BGRAReadGif, BGRAReadPCX, BGRAReadPng, BGRAReadPSD, 
-  BGRAThumbnail, BGRAReadTGA, BGRAReadIco, bgrareadjpeg, BGRAReadLzp, 
+  BGRAThumbnail, BGRAReadTGA, BGRAReadIco, BGRAReadJpeg, BGRAReadLzp, 
   UnzipperExt, BGRALzpCommon, BGRAWriteLzp, BGRAReadXPM, BGRASVG, BGRAUnits, 
-  BGRASVGShapes, BGRASVGType;
+  BGRASVGShapes, BGRASVGType, BGRAReadBmpMioMap, BGRAArrow, BGRAPalette, 
+  BGRAColorQuantization, BGRADithering, BGRAUTF8, BGRALCLBitmap, BGRAWritePNG, 
+  BGRAGifFormat, BGRAGraphics, BGRASceneTypes, BGRARenderer3D, 
+  BGRAWriteBmpMioMap, BGRAOpenGLType, BGRASpriteGL, BGRAOpenGL, BGRACanvasGL, 
+  BGRAFontGL, BGRAOpenGL3D, BGRAPhoxo, BGRAFilterScanner;
 
 implementation
 

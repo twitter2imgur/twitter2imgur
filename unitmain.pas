@@ -1,4 +1,4 @@
-// Copyright 2014, 2015 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
+// Copyright 2014, 2015, 2016 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
 //
 // This file is part of Twitter2Imgur.
 //
@@ -43,13 +43,20 @@ type
     LabelProgress: TLabel;
     LabelStatusBar2: TLabel;
     ListViewFiles: TListView;
+    MenuItemFetch: TMenuItem;
+    MenuItemShow: TMenuItem;
+    MenuItemExit: TMenuItem;
+    MenuItemSep: TMenuItem;
+    MenuItemOpenFolder: TMenuItem;
     MenuItemSeparator: TMenuItem;
     MenuItemViewURL: TMenuItem;
     MenuItemViewLocal: TMenuItem;
     MenuItemCopyURL: TMenuItem;
+    PopupMenuTray: TPopupMenu;
     PopupMenuImages: TPopupMenu;
     ProgressBar1: TProgressBar;
     Timer1: TTimer;
+    TrayIcon1: TTrayIcon;
     procedure BitBtnFolderClick(Sender: TObject);
     procedure BitBtnImgurClick(Sender: TObject);
     procedure ButtonAboutClick(Sender: TObject);
@@ -69,6 +76,10 @@ type
     procedure ListViewFilesResize(Sender: TObject);
     procedure ListViewFilesSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
     procedure MenuItemCopyURLClick(Sender: TObject);
+    procedure MenuItemExitClick(Sender: TObject);
+    procedure MenuItemFetchClick(Sender: TObject);
+    procedure MenuItemOpenFolderClick(Sender: TObject);
+    procedure MenuItemShowClick(Sender: TObject);
     procedure MenuItemViewLocalClick(Sender: TObject);
     procedure MenuItemViewURLClick(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -77,6 +88,7 @@ type
     procedure HandleThreadMsg_thumbnail_loaded(var Msg: TLMessage); message windowmsg_thumbnail_loaded;
     procedure HandleThreadMsg_update_listview(var Msg: TLMessage); message windowmsg_update_listview;
     procedure imgur_sock_onstatus(Sender:TObject;Reason:THookSocketReason;const Value:String);
+    procedure TrayIcon1Click(Sender: TObject);
   private
     { private declarations }
   public
@@ -108,6 +120,7 @@ var
   job_cleanup_run:boolean=false;
   want_exit:boolean=false;
   ExitTimer:TTimer=nil;
+  first_update:boolean=true;
 
 procedure program_shutdown;
 var l:longint;
@@ -348,6 +361,38 @@ begin
  if get_selected_file(i) then run_action(i,2);
 end;
 
+procedure TFormMain.MenuItemExitClick(Sender: TObject);
+begin
+ Close;
+end;
+
+procedure TFormMain.MenuItemFetchClick(Sender: TObject);
+begin
+ ButtonUpdateClick(MenuItemFetch);
+end;
+
+procedure TFormMain.MenuItemOpenFolderClick(Sender: TObject);
+var i:integer;
+begin
+ if get_selected_file(i) then begin
+  if not DirectoryExists(imagesdir) then forcedirectories(imagesdir);
+  {$ifdef MSWindows}shellexec('explorer.exe',['/select,"'+imagesdir+img_list[i].local_file+'"'],'');
+   {$else}{$ifdef Darwin}shellexec('open',[imagesdir],'');
+    {$else}{$ifdef UNIX}shellexec('xdg-open',[imagesdir],'');
+    {$else}Other platform stuff here...
+   {$endif}
+  {$endif}
+ {$endif}
+ end;
+end;
+
+procedure TFormMain.MenuItemShowClick(Sender: TObject);
+begin
+ Position:=poDesigned;
+ ShowOnTop;
+ TrayIcon1.Hide;
+end;
+
 procedure TFormMain.MenuItemViewLocalClick(Sender: TObject);
 var i:integer;
 begin
@@ -383,6 +428,32 @@ begin
  end;
 end;
 
+procedure do_fetch(auto:boolean);
+var l:longint;
+begin
+ current_fetch_is_auto:=auto;
+ for l:=0 to img_list_count-1 do begin
+  img_list[l].flags:=0;
+  img_list[l].errorinfo:='';
+ end;
+ abort_clicked:=false;
+ job_cleanup_run:=false;
+ tweet_fetch_success:=false;
+ tweet_fetch_info:='';
+ jobs_in_progress:=true;
+ need_progressbar_hide:=false;
+ progress_jobs_total:=0;
+ progress_jobs_done:=0;
+ progress_numfiles:=0;
+ progress_imgur_currentfile_total:=0;
+ progress_imgur_currentfile_current:=0;
+ FormMain.ProgressBar1.Position:=0;
+ FormMain.LabelProgress.Caption:='Fetching tweets...';
+ set_main_form_control_states;
+ FormMain.Timer1.Interval:=50; // fast updates for displaying progress
+ thread_activate(twitter_thread,@do_job_thread);
+end;
+
 procedure TFormMain.Timer1Timer(Sender: TObject);
 var l:longint;
   updatelist:boolean=false;
@@ -390,6 +461,10 @@ begin
  set_status_label;
  get_selected_file(l);
  update_status_bar(l);
+ if first_update then begin
+  first_update:=false;
+  Timer1.Interval:=60000;
+ end;
  if jobs_in_progress then begin
   if not need_progressbar_hide then update_job_progress
   else begin
@@ -405,6 +480,8 @@ begin
    end;
   end;
   if updatelist then populate_mainform_listview;
+
+  if auto_fetch and (not buttonstate) and (not FormSettings.Showing) and (twitter_screenname<>'') and (imgur_screenname<>'') and (unixtime>=last_update+auto_fetch_mins*60) then do_fetch(true);
  end;
 end;
 
@@ -414,7 +491,7 @@ begin
  if imgur_thread.started then KillThread(imgur_thread.id);
  if thumbnail_thread.started then KillThread(thumbnail_thread.id);
  OnCloseQuery:=nil;
- Application.Terminate;
+ Close;
 end;
 
 procedure TFormMain.ButtonSettingsClick(Sender: TObject);
@@ -450,36 +527,15 @@ begin
 end;
 
 procedure TFormMain.ButtonUpdateClick(Sender: TObject);
-var l:longint;
 begin
- if (not buttonstate) and (not jobs_in_progress) and (twitter_screenname<>'') and (imgur_screenname<>'') then begin
-  for l:=0 to img_list_count-1 do begin
-   img_list[l].flags:=0;
-   img_list[l].errorinfo:='';
+ if (not buttonstate) and (not jobs_in_progress) and (twitter_screenname<>'') and (imgur_screenname<>'') then do_fetch(false)
+ else if buttonstate then begin // Cancel
+  if Sender<>MenuItemFetch then begin
+   twitter_thread.abort:=true;
+   imgur_thread.abort:=true;
+   abort_clicked:=true;
   end;
-  abort_clicked:=false;
-  job_cleanup_run:=false;
-  tweet_fetch_success:=false;
-  tweet_fetch_info:='';
-  jobs_in_progress:=true;
-  need_progressbar_hide:=false;
-  progress_jobs_total:=0;
-  progress_jobs_done:=0;
-  progress_numfiles:=0;
-  progress_imgur_currentfile_total:=0;
-  progress_imgur_currentfile_current:=0;
-  ProgressBar1.Position:=0;
-  LabelProgress.Caption:='Fetching tweets...';
-  set_main_form_control_states;
-  Timer1.Interval:=50; // fast updates for displaying progress
-  thread_activate(twitter_thread,@do_job_thread);
- end else if buttonstate then begin // Cancel
-  twitter_thread.abort:=true;
-  imgur_thread.abort:=true;
-  abort_clicked:=true;
- end else if (twitter_screenname='') or (imgur_screenname='') then begin
-  MessageDlg('Missing Accounts','You need to enter your Twitter and Imgur accounts in the settings before you can fetch and upload images.',mtInformation,[mbOK],0);
- end;
+ end else if (twitter_screenname='') or (imgur_screenname='') then MessageDlg('Missing Accounts','You need to enter your Twitter and Imgur accounts in the settings before you can fetch and upload images.',mtInformation,[mbOK],0);
 end;
 
 procedure TFormMain.FormChangeBounds(Sender: TObject);
@@ -517,7 +573,7 @@ begin
   job_cleanup_run:=true;
   if abort_clicked then begin
    Timer1.Enabled:=false;
-   if not want_exit then MessageDlg('Update cancelled.',mtInformation,[mbOK],0);
+   if not want_exit then MessageDlg('Information','Fetch cancelled.',mtInformation,[mbOK],0);
    Timer1.Enabled:=true;
   end;
 
@@ -534,9 +590,9 @@ begin
 
    if not tweet_fetch_success then begin
     LabelProgress.Caption:='Failed to fetch tweets!';
-    MessageDlg('Unable to fetch tweets from Twitter account.'#13#13+tweet_fetch_info,mtError,[mbOK],0);
+    if not current_fetch_is_auto then MessageDlg('Error','Unable to fetch tweets from Twitter account.'#13#13+tweet_fetch_info,mtError,[mbOK],0);
    end else begin
-    if abort_clicked then LabelProgress.Caption:='Update cancelled!'
+    if abort_clicked then LabelProgress.Caption:='Fetch cancelled!'
     else if progress_numfiles=0 then LabelProgress.Caption:='Done! No new images.'
     else LabelProgress.Caption:='Done! '+plural(progress_numfiles,'new image','new images')+'.';
 
@@ -545,21 +601,29 @@ begin
      inc(errorcount);
      s:=s+#13+img_list[l].twitter_media_id+': '+img_list[l].errorinfo;
     end;
-    if errorcount>0 then MessageDlg(plural(errorcount,'image','images')+' could not be transferred:'#13+s+#13#13'Trying again may fix the issue.',mtError,[mbOK],0);
+    if (errorcount>0) and (not current_fetch_is_auto) then MessageDlg('Error',plural(errorcount,'image','images')+' could not be transferred:'#13+s+#13#13'Trying again may fix the issue.',mtError,[mbOK],0);
 
    end;
    abort_clicked:=false;
 
    if show_update_notification then begin
     show_update_notification:=false;
+    app_update_check:=false;
     if messagedlg(Application.Title+' Update',program_update_msg,mtConfirmation,[mbYes,mbNo],0,mbYes)=mrYes then OpenURL(program_update_url);
+    app_update_check:=true;
+    last_app_update_check:=unixtime;
+   end else if (app_update_attempt_count>=10) and (last_successful_app_update_check+60*60*24*90<unixtime) then begin // >=10 failed attempts and 90 days since last successful check
+    if last_successful_app_update_check>0 then s:=' for '+show_duration(unixtime-last_successful_app_update_check) else s:='';
+    if messagedlg(Application.Title+' Update',Application.Title+' has been unable to check for updates'+s+'. Would you like to manually check now?',mtConfirmation,[mbYes,mbNo],0,mbYes)=mrYes then OpenURL(app_url);
+    app_update_attempt_count:=0;
+    last_successful_app_update_check:=unixtime;
    end;
   end;
  end;
 
  if want_exit and (not twitter_thread.started) and (not imgur_thread.started) and (not thumbnail_thread.started) then begin
-  FormMain.OnCloseQuery:=nil;
-  Application.Terminate;
+  OnCloseQuery:=nil;
+  Close;
  end;
 end;
 
@@ -583,6 +647,7 @@ begin
  bmp.Free;
  id^:='';
  freemem(id,sizeof(string));
+ {$ifdef Unix}Application.ProcessMessages;{$endif} // mitigates the UI locking up on Linux if thumbnails come in too fast
 end;
 
 procedure TFormMain.HandleThreadMsg_update_listview(var Msg: TLMessage);
@@ -604,9 +669,20 @@ begin
  end;
 end;
 
+procedure TFormMain.TrayIcon1Click(Sender: TObject);
+begin
+ Position:=poDesigned;
+ ShowOnTop;
+ TrayIcon1.Hide;
+end;
+
 procedure TFormMain.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
- if twitter_thread.started or imgur_thread.started or thumbnail_thread.started then begin
+ if use_systray and Visible then begin
+  TrayIcon1.Show;
+  Hide;
+  CanClose:=False;
+ end else if twitter_thread.started or imgur_thread.started or thumbnail_thread.started then begin
   twitter_thread.abort:=true;
   imgur_thread.abort:=true;
   thumbnail_thread.abort:=true;

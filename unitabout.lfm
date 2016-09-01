@@ -1,15 +1,15 @@
 object FormAbout: TFormAbout
   Left = 490
-  Height = 341
+  Height = 440
   Top = 382
-  Width = 305
+  Width = 543
   AutoSize = True
   BorderStyle = bsDialog
   Caption = 'About'
-  ClientHeight = 341
-  ClientWidth = 305
+  ClientHeight = 440
+  ClientWidth = 543
   Position = poScreenCenter
-  LCLVersion = '1.2.6.0'
+  LCLVersion = '1.6.0.4'
   object ImageLogo: TImage
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
@@ -134,9 +134,9 @@ object FormAbout: TFormAbout
     AnchorSideLeft.Side = asrBottom
     AnchorSideTop.Control = Owner
     Left = 120
-    Height = 13
+    Height = 15
     Top = 12
-    Width = 141
+    Width = 140
     BorderSpacing.Left = 8
     BorderSpacing.Top = 4
     BorderSpacing.Right = 8
@@ -149,14 +149,14 @@ object FormAbout: TFormAbout
   object ButtonOK: TButton
     AnchorSideLeft.Control = Owner
     AnchorSideLeft.Side = asrCenter
-    AnchorSideTop.Control = LabelURL
+    AnchorSideTop.Control = LabelBuildInfo
     AnchorSideTop.Side = asrBottom
-    Left = 116
-    Height = 23
-    Top = 125
+    Left = 235
+    Height = 25
+    Top = 135
     Width = 72
     AutoSize = True
-    BorderSpacing.Top = 16
+    BorderSpacing.Top = 8
     BorderSpacing.Around = 8
     Cancel = True
     Caption = '&OK'
@@ -169,17 +169,13 @@ object FormAbout: TFormAbout
     AnchorSideLeft.Control = LabelTitle
     AnchorSideTop.Control = LabelTitle
     AnchorSideTop.Side = asrBottom
-    AnchorSideRight.Control = Owner
-    AnchorSideRight.Side = asrBottom
     Left = 120
-    Height = 26
-    Top = 33
-    Width = 169
-    Anchors = [akTop, akLeft, akRight]
+    Height = 15
+    Top = 35
+    Width = 318
     BorderSpacing.Right = 16
     Caption = 'Grabs images posted on Twitter and uploads them to Imgur.'
     ParentColor = False
-    WordWrap = True
   end
   object LabelURL: TLabel
     AnchorSideLeft.Control = LabelTitle
@@ -187,9 +183,9 @@ object FormAbout: TFormAbout
     AnchorSideTop.Side = asrBottom
     Cursor = crHandPoint
     Left = 120
-    Height = 13
-    Top = 88
-    Width = 44
+    Height = 15
+    Top = 81
+    Width = 49
     BorderSpacing.Top = 8
     BorderSpacing.Right = 16
     Caption = 'LabelURL'
@@ -207,12 +203,29 @@ object FormAbout: TFormAbout
     AnchorSideTop.Control = LabelDesc
     AnchorSideTop.Side = asrBottom
     Left = 120
-    Height = 13
-    Top = 67
-    Width = 151
+    Height = 15
+    Top = 58
+    Width = 188
     BorderSpacing.Top = 8
     BorderSpacing.Right = 16
-    Caption = 'Copyright (C) 2014, 2015 Dr C.'
+    Caption = 'Copyright (C) 2014, 2015, 2016 Dr C.'
     ParentColor = False
+  end
+  object LabelBuildInfo: TLabel
+    AnchorSideLeft.Control = LabelTitle
+    AnchorSideTop.Control = LabelURL
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 120
+    Height = 15
+    Top = 104
+    Width = 407
+    Anchors = [akTop, akLeft, akRight]
+    BorderSpacing.Top = 8
+    BorderSpacing.Right = 16
+    Caption = 'LabelBuildInfo'
+    ParentColor = False
+    WordWrap = True
   end
 end

@@ -2,7 +2,7 @@
 
 !define bits "32"
 ; "64" for 64 bit, any non-empty string for 32 bit
-!define Version "1.02"
+!define Version "1.03"
 !define AppName "Twitter2Imgur"
 !define ExeName "twitter2imgur.exe"
 !define AppDesc "Uploads Twitter Images to Imgur"
@@ -48,7 +48,7 @@ VIAddVersionKey "ProductName" "${AppName}"
 VIAddVersionKey "Comments" "http://twitter2imgur.github.io/twitter2imgur/"
 VIAddVersionKey "FileDescription" "${AppName}"
 VIAddVersionKey "FileVersion" "${Version}"
-VIAddVersionKey "LegalCopyright" "(c) 2014, 2015 Dr C (drcpsn@hotmail.com)"
+VIAddVersionKey "LegalCopyright" "(c) 2014, 2015, 2016 Dr C (drcpsn@hotmail.com)"
 VIProductVersion "${Version}.0.0"
 
 Page license
@@ -87,7 +87,7 @@ Section "${AppName} (required)"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${AppName}" "DisplayName" "${AppName}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${AppName}" "DisplayIcon" "$INSTDIR\${ExeName}"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${AppName}" "DisplayVersion" "${Version}"
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${AppName}" "HelpLink" "http://code.google.com/p/twitter2imgur/"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${AppName}" "HelpLink" "http://twitter2imgur.github.io/twitter2imgur/"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${AppName}" "Publisher" "Dr C"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${AppName}" "URLInfoAbout" "http://twitter2imgur.github.io/twitter2imgur/"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${AppName}" "UninstallString" '"$INSTDIR\uninstall.exe"'
