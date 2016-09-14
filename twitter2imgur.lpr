@@ -24,7 +24,7 @@ uses
   {$IFDEF UNIX}
   cthreads,
   {$ENDIF}
-  Interfaces, Forms, unitmain, unitsettings, unitabout, misc, Graphics, Dialogs, LCLVersion;
+  Interfaces, Forms, unitmain, unitsettings, unitabout, misc, Graphics, Dialogs, LCLVersion, ssl_openssl_lib;
 
 function buildinfo:string;
 begin
@@ -88,7 +88,7 @@ begin
   init_thumbnail_imagelist;
 
   if ssl_version='' then begin
-   {$ifdef MSWindows}MessageDlg('Missing OpenSSL Libraries','OpenSSL libraries libeay32.dll and ssleay32.dll'{$ifdef CPU32}+' (32 bit)'{$endif}{$ifdef CPU64}+' (64 bit)'{$endif}+' were not found. Twitter and Imgur operations will not work without these files.',mtError,[mbOK],0);
+   {$ifdef MSWindows}MessageDlg('Missing OpenSSL Libraries','OpenSSL libraries '+ssl_openssl_lib.DLLSSLName+' and '+ssl_openssl_lib.DLLUtilName{$ifdef CPU32}+' (32 bit)'{$endif}{$ifdef CPU64}+' (64 bit)'{$endif}+' could not be loaded. Twitter and Imgur operations will not work without these files.'#13#13'Installing OpenSSL yourself may fix the problem.',mtError,[mbOK],0);
    {$else}
      {$ifdef Unix}
        {$ifdef Darwin}MessageDlg('Missing OpenSSL Libraries','Twitter and Imgur operations require the OpenSSL libraries installed on your system.',mtError,[mbOK],0);

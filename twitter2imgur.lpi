@@ -20,8 +20,8 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="1"/>
-      <RevisionNr Value="3"/>
-      <StringTable FileDescription="Twitter2Imgur" InternalName="Twitter2Imgur" LegalCopyright="Copyright 2014, 2015, 2016" ProductName="Twitter2Imgur" ProductVersion="1.03"/>
+      <RevisionNr Value="4"/>
+      <StringTable FileDescription="Twitter2Imgur" InternalName="Twitter2Imgur" LegalCopyright="Copyright 2014, 2015, 2016" ProductName="Twitter2Imgur" ProductVersion="1.04"/>
     </VersionInfo>
     <BuildModes Count="2">
       <Item1 Name="Debug" Default="True"/>

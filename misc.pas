@@ -77,8 +77,8 @@ const
 //  app_url='https://code.google.com/p/twitter2imgur/';
   app_url='http://twitter2imgur.github.io/twitter2imgur/';
   app_download_url=app_url;
-  app_version=1.03;
-  app_version_str='1.03';
+  app_version=1.04;
+  app_version_str='1.04';
 
   ini_line_junk=0;
   ini_line_section=1;

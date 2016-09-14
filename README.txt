@@ -1,5 +1,5 @@
 Twitter2Imgur by Dr C (drcpsn@hotmail.com)
-Release 1.03 (1 Sep 2016)
+Release 1.04 (14 Sep 2016)
 
 A small app designed to fetch images posted from a Twitter account and upload
 them to an Imgur account. It is written in Free Pascal/Lazarus.
@@ -39,6 +39,9 @@ To build:
 
 
 4) Changelog:
+
+Version 1.04 (14 Sep 2016)
+- Switched to bundling Indy's OpenSSL DLLs on Windows (OpenSSL was failing to load on systems without Visual Studio runtime installed)
 
 Version 1.03 (1 Sep 2016)
 - Image thumbnails are now cached for faster loading

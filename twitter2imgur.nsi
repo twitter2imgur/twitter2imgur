@@ -2,7 +2,7 @@
 
 !define bits "32"
 ; "64" for 64 bit, any non-empty string for 32 bit
-!define Version "1.03"
+!define Version "1.04"
 !define AppName "Twitter2Imgur"
 !define ExeName "twitter2imgur.exe"
 !define AppDesc "Uploads Twitter Images to Imgur"
