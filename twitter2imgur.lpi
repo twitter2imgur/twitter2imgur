@@ -20,12 +20,12 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="1"/>
-      <RevisionNr Value="4"/>
-      <StringTable FileDescription="Twitter2Imgur" InternalName="Twitter2Imgur" LegalCopyright="Copyright 2014, 2015, 2016" ProductName="Twitter2Imgur" ProductVersion="1.04"/>
+      <RevisionNr Value="5"/>
+      <StringTable FileDescription="Twitter2Imgur" InternalName="Twitter2Imgur" LegalCopyright="Copyright 2014-2017" ProductName="Twitter2Imgur" ProductVersion="1.05"/>
     </VersionInfo>
     <BuildModes Count="2">
-      <Item1 Name="Debug" Default="True"/>
-      <Item2 Name="Release">
+      <Item1 Name="Release" Default="True"/>
+      <Item2 Name="Debug">
         <CompilerOptions>
           <Version Value="11"/>
           <PathDelim Value="\"/>
@@ -37,24 +37,21 @@
             <OtherUnitFiles Value="synapse;json-fpk;bgrabitmap"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
-          <CodeGeneration>
-            <SmartLinkUnit Value="True"/>
-            <Optimizations>
-              <OptimizationLevel Value="3"/>
-            </Optimizations>
-          </CodeGeneration>
           <Linking>
-            <Debugging>
-              <GenerateDebugInfo Value="False"/>
-              <StripSymbols Value="True"/>
-            </Debugging>
-            <LinkSmart Value="True"/>
             <Options>
               <Win32>
                 <GraphicApplication Value="True"/>
               </Win32>
             </Options>
           </Linking>
+          <Other>
+            <CustomOptions Value="-dfilelock
+-ddebug"/>
+            <OtherDefines Count="2">
+              <Define0 Value="filelock"/>
+              <Define1 Value="debug"/>
+            </OtherDefines>
+          </Other>
         </CompilerOptions>
       </Item2>
     </BuildModes>
@@ -62,7 +59,7 @@
       <Version Value="2"/>
       <DestinationDirectory Value="$(ProjPath)\published\"/>
       <IgnoreBinaries Value="False"/>
-      <IncludeFileFilter Value="*.(pas|pp|inc|lpr|lfm|lrs|lpi|lpk|xml|sh|jpg|png|ico|dll|txt|nsi);json-fpk;synapse;bgrabitmap"/>
+      <IncludeFileFilter Value="*.(pas|pp|inc|lpr|lfm|lrs|lpi|lpk|xml|sh|jpg|png|ico|dll|txt|nsi);json-fpk;synapse;bgrabitmap;LICENSE;README.md"/>
     </PublishOptions>
     <RunParams>
       <local>
@@ -74,7 +71,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="7">
+    <Units Count="8">
       <Unit0>
         <Filename Value="twitter2imgur.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -112,6 +109,13 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit6>
+      <Unit7>
+        <Filename Value="unitdeleteimage.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FormDeleteImage"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit7>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -125,12 +129,30 @@
       <OtherUnitFiles Value="synapse;json-fpk;bgrabitmap"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
+    <CodeGeneration>
+      <SmartLinkUnit Value="True"/>
+      <Optimizations>
+        <OptimizationLevel Value="3"/>
+      </Optimizations>
+    </CodeGeneration>
     <Linking>
+      <Debugging>
+        <GenerateDebugInfo Value="False"/>
+        <StripSymbols Value="True"/>
+      </Debugging>
+      <LinkSmart Value="True"/>
       <Options>
         <Win32>
           <GraphicApplication Value="True"/>
         </Win32>
       </Options>
     </Linking>
+    <Other>
+      <CustomOptions Value="-dfilelock"/>
+      <OtherDefines Count="2">
+        <Define0 Value="filelock"/>
+        <Define1 Value="debug"/>
+      </OtherDefines>
+    </Other>
   </CompilerOptions>
 </CONFIG>

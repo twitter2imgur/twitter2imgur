@@ -1,7 +1,7 @@
 object FormAbout: TFormAbout
-  Left = 490
+  Left = 498
   Height = 440
-  Top = 382
+  Top = 496
   Width = 543
   AutoSize = True
   BorderStyle = bsDialog
@@ -9,7 +9,7 @@ object FormAbout: TFormAbout
   ClientHeight = 440
   ClientWidth = 543
   Position = poScreenCenter
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '1.6.2.0'
   object ImageLogo: TImage
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
@@ -205,10 +205,10 @@ object FormAbout: TFormAbout
     Left = 120
     Height = 15
     Top = 58
-    Width = 188
+    Width = 152
     BorderSpacing.Top = 8
     BorderSpacing.Right = 16
-    Caption = 'Copyright (C) 2014, 2015, 2016 Dr C.'
+    Caption = 'Copyright © 2014-2017 Dr C.'
     ParentColor = False
   end
   object LabelBuildInfo: TLabel

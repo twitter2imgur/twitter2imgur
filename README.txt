@@ -1,5 +1,5 @@
 Twitter2Imgur by Dr C (drcpsn@hotmail.com)
-Release 1.04 (14 Sep 2016)
+Release 1.05 (4 Feb 2017)
 
 A small app designed to fetch images posted from a Twitter account and upload
 them to an Imgur account. It is written in Free Pascal/Lazarus.
@@ -7,7 +7,7 @@ them to an Imgur account. It is written in Free Pascal/Lazarus.
 
 1) Project Homepage:
 
-http://twitter2imgur.github.io/twitter2imgur/ (formerly https://code.google.com/p/twitter2imgur/)
+https://twitter2imgur.github.io/twitter2imgur/
 
 
 2) How to Use:
@@ -39,6 +39,12 @@ To build:
 
 
 4) Changelog:
+
+Version 1.05 (4 Feb 2017)
+- Added ability to upload to Imgur anonymously
+- Added ability to delete images
+- Added option to limit the number of recent images shown
+- Support for tweets longer than 140 characters
 
 Version 1.04 (14 Sep 2016)
 - Switched to bundling Indy's OpenSSL DLLs on Windows (OpenSSL was failing to load on systems without Visual Studio runtime installed)

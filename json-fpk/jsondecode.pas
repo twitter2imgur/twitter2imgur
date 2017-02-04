@@ -463,7 +463,7 @@ Function JSONGetKey(CONST JSONData:String):String;                              
 
 Function JSONGetValue(CONST JSONData:String):String;                            //@002+
  var
-   InputPos:integer=0;
+   InputPos:integer=1; // !!!!!!!changed this from 0!!!!!!!!
   Begin
     Result := 'not set';
     If Length(JSONData) = 0 then exit;

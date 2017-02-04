@@ -1,4 +1,4 @@
-// Copyright 2014, 2015, 2016 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
+// Copyright 2014-2017 Dr C (drcpsn@hotmail.com | https://twitter2imgur.github.io/twitter2imgur/)
 //
 // This file is part of Twitter2Imgur.
 //
@@ -22,12 +22,19 @@ unit misc;
 interface
 
 uses
-  Classes, SysUtils, LMessages, Graphics;
+  Classes, SysUtils, LMessages, Graphics, dialogs;
 
 type
   thread_info=record
   started,running,suspended,abort:boolean;
   id:TThreadID;
+ end;
+
+ img_list_type=record
+  timestamp,fetched_timestamp,imglist_num,listview_index:longint;
+  twitter_media_id,twitter_url,title_,twitter_hashtags_,local_file,imgur_id,imgur_url,imgur_deletehash,errorinfo:string;
+  flags:word;
+  deleted:boolean;
  end;
 
 function trim_whitespace(s:string):string;
@@ -53,6 +60,7 @@ function o_(s,k:string):string;
 function do_(s,k:string):string;
 function parse_timestamp(s:string;var t:longint):boolean;
 function shellexec(executable:string;params:array of string;currentdir:string):boolean;
+function thumbcache(imgname:string):string;
 function load_image_thumbnails(p:pointer):ptrint; // secondary thread
 procedure init_thumbnail_imagelist;
 procedure thread_activate(var thread:thread_info;proc:TThreadfunc);
@@ -75,10 +83,10 @@ const
   thumbnail_height_default=72;
 
 //  app_url='https://code.google.com/p/twitter2imgur/';
-  app_url='http://twitter2imgur.github.io/twitter2imgur/';
+  app_url='https://twitter2imgur.github.io/twitter2imgur/';
   app_download_url=app_url;
-  app_version=1.04;
-  app_version_str='1.04';
+  app_version=1.05;
+  app_version_str='1.05';
 
   ini_line_junk=0;
   ini_line_section=1;
@@ -91,12 +99,6 @@ const
   job_flag_new=$10;
 
 type
-  img_list_type=record
-   timestamp,fetched_timestamp,imglist_num:longint;
-   twitter_media_id,twitter_url,title_,twitter_hashtags_,local_file,imgur_id,imgur_url,errorinfo:string;
-   flags:word;
-  end;
-
   imgur_album_type=record
    title,id:string;
   end;
@@ -105,6 +107,8 @@ var
   img_list_CS:system.TRTLCriticalSection;
   configdir,imagesdir,thumbsdir:string;
   epoch:tdatetime;
+
+  configfile:text;
 
   img_list:^img_list_type=nil;
   img_list_count:longint=0;
@@ -123,7 +127,7 @@ var
 {  img_loading:integer=-1;
   img_error:integer=-1;}
 
-  twitter_thread,imgur_thread,thumbnail_thread:thread_info;
+  twitter_thread,imgur_thread,thumbnail_thread,update_thread:thread_info;
 
   tweet_fetch_success:boolean;
   tweet_fetch_info:string;
@@ -151,6 +155,7 @@ var
   auto_upload_album:boolean=false;
   always_on_top:boolean=false;
   use_systray:boolean=false;
+  allow_image_delete:boolean=true;
   url_mode:longint=0;
   thumbnail_width:longint=thumbnail_width_default;
   thumbnail_height:longint=thumbnail_height_default;
@@ -161,6 +166,8 @@ var
   font_override:boolean=false;
   no_img_desc:boolean=false;
   cache_thumbnails:boolean=true;
+  trim_image_list:boolean=false;
+  trim_image_list_count:longint=100;
 
   ssl_version:string;
 
@@ -169,6 +176,7 @@ var
   app_update_attempt_count:longint=0;
   app_update_check:boolean=true;
   current_fetch_is_auto:boolean;
+  del_index:integer;
 
 implementation
 
@@ -295,8 +303,7 @@ const
   section_unknown=0;
   section_options=1;
 var
-  filename,line,param,value,s,s2:string;
-  t:text;
+  line,param,value,s,s2:string;
   i,section:integer;
   l,l2:longint;
   formrect:TRect;
@@ -304,15 +311,21 @@ var
   bl:boolean;
   fontstyle:TFontStyles=[];
 begin
- filename:=configdir+'config.ini';
+ system.assign(configfile,configdir+'config.ini');
+ if not FileExists(configdir+'config.ini') then begin
+  ForceDirectories(configdir);
+  rewrite(configfile);
+  close(configfile);
+  ioresult;
+ end;
+
  filemode:=0;
- assign(t,filename);
- reset(t);
+ reset(configfile);
  section:=section_options;
 
  if ioresult=0 then begin
-  while not eof(t) do begin
-   readln(t,line);
+  while not eof(configfile) do begin
+   readln(configfile,line);
    if ioresult<>0 then break;
    case parse_ini_line(line,param,value) of
     ini_line_section:begin
@@ -334,12 +347,16 @@ begin
       else if param='last update' then s2l(value,last_update)
       else if param='always on top' then always_on_top:=value='1'
       else if param='use systray' then use_systray:=value='1'
+      else if param='allow delete' then allow_image_delete:=value='1'
       else if param='default action' then begin
        if value='1' then default_action:=1 else if value='2' then default_action:=2 else default_action:=0;
       end else if param='limit hashtags' then limit_hashtags:=value
       else if param='url mode' then s2l(value,url_mode)
       else if param='no image description' then no_img_desc:=value='1'
-      else if param='cache thumbnails' then cache_thumbnails:=value='1'
+      else if param='trim image list' then trim_image_list:=value='1'
+      else if param='trim image list count' then begin
+       if s2l(value,l) then if (l>0) and (l<=1000000) then trim_image_list_count:=l;
+      end else if param='cache thumbnails' then cache_thumbnails:=value='1'
       else if param='thumbnail size' then begin
        if s2l(str_firstparam(value,true,','),l) then if (l>=0) and (l<=1000) then thumbnail_width:=l;
        if s2l(str_firstparam(value,true,','),l) then if (l>=0) and (l<=1000) then thumbnail_height:=l;
@@ -392,9 +409,18 @@ begin
     end;
    end;
   end;
-  close(t);
+  close(configfile);
   ioresult;
  end;
+
+ {$ifdef filelock}
+ filemode:=fmOpenRead or fmShareExclusive;
+ reset(configfile);
+ if ioresult<>0 then begin
+  MessageDlg('Error','Unable to lock '+configdir+'config.ini. Another instance of '+Application.Title+' is probably already running.',mtError,[mbOK],0);
+  halt;
+ end;
+ {$endif}
 end;
 
 procedure write_config_file;
@@ -402,55 +428,74 @@ var
   tempname,filename,s:string;
   fontsize:integer;
   fontstyle:TFontStylesBase;
-  t:text;
+
+ function bool2s(bl:boolean):string;
+ begin
+  if bl then result:='1' else result:='0';
+ end;
+
 begin
  tempname:=configdir+'config.'+l2s(unixtime)+'.tmp';
  filename:=configdir+'config.ini';
  if not DirectoryExists(configdir) then ForceDirectories(configdir);
- assign(t,tempname);
- rewrite(t);
- writeln(t,'[options]');
- writeln(t,'version='+app_version_str);
- writeln(t,'twitter name='+twitter_screenname);
- writeln(t,'twitter token='+o_(twitter_token,'*/*zP|Z@}Ec6dt|oz4n7''e>j,tTa+^8H'));
- writeln(t,'twitter secret token='+o_(twitter_token_secret,'ZIR)-5o$Zfiw!"ZU~vKTa}L`"+XDyol)'));
- writeln(t,'imgur name='+imgur_screenname);
- writeln(t,'imgur token='+o_(imgur_access_token,'c-GA|,MQ(P+9;G\Zx}dN*c0O/zBm+J]8'));
- writeln(t,'imgur refresh token='+o_(imgur_refresh_token,'6m-wh0^my$O*I6bG9}qJ:g[$Z<4wW1wa'));
- writeln(t,'imgur token expiry='+l2s(imgur_token_expiry));
- if auto_fetch then writeln(t,'auto fetch=1') else writeln(t,'auto fetch=0');
- writeln(t,'auto fetch mins='+l2s(auto_fetch_mins));
- writeln(t,'limit hashtags='+limit_hashtags);
- writeln(t,'album='+upload_album);
- if auto_upload_album then writeln(t,'auto album=1') else writeln(t,'auto album=0');
- writeln(t,'last update='+l2s(last_update));
- if always_on_top then writeln(t,'always on top=1') else writeln(t,'always on top=0');
- if use_systray then writeln(t,'use systray=1') else writeln(t,'use systray=0');
- writeln(t,'default action='+l2s(default_action));
- writeln(t,'url mode='+l2s(url_mode));
- writeln(t,'thumbnail size='+l2s(thumbnail_width)+','+l2s(thumbnail_height));
- if window_maximised then s:='1' else s:='0';
- writeln(t,'window coords='+l2s(window_coords[0])+','+l2s(window_coords[1])+','+l2s(window_coords[2])+','+l2s(window_coords[3])+','+s);
+ {$ifdef filelock}
+ close(configfile);
+ ioresult;
+ {$endif}
+ system.assign(configfile,tempname);
+ rewrite(configfile);
+ writeln(configfile,'[options]');
+ writeln(configfile,'version='+app_version_str);
+ writeln(configfile,'twitter name='+twitter_screenname);
+ writeln(configfile,'twitter token='+o_(twitter_token,'*/*zP|Z@}Ec6dt|oz4n7''e>j,tTa+^8H'));
+ writeln(configfile,'twitter secret token='+o_(twitter_token_secret,'ZIR)-5o$Zfiw!"ZU~vKTa}L`"+XDyol)'));
+ writeln(configfile,'imgur name='+imgur_screenname);
+ writeln(configfile,'imgur token='+o_(imgur_access_token,'c-GA|,MQ(P+9;G\Zx}dN*c0O/zBm+J]8'));
+ writeln(configfile,'imgur refresh token='+o_(imgur_refresh_token,'6m-wh0^my$O*I6bG9}qJ:g[$Z<4wW1wa'));
+ writeln(configfile,'imgur token expiry='+l2s(imgur_token_expiry));
+ writeln(configfile,'auto fetch='+bool2s(auto_fetch));
+ writeln(configfile,'auto fetch mins='+l2s(auto_fetch_mins));
+ writeln(configfile,'limit hashtags='+limit_hashtags);
+ writeln(configfile,'album='+upload_album);
+ writeln(configfile,'auto album='+bool2s(auto_upload_album));
+ writeln(configfile,'last update='+l2s(last_update));
+ writeln(configfile,'always on top='+bool2s(always_on_top));
+ writeln(configfile,'use systray='+bool2s(use_systray));
+ writeln(configfile,'allow delete='+bool2s(allow_image_delete));
+ writeln(configfile,'default action='+l2s(default_action));
+ writeln(configfile,'url mode='+l2s(url_mode));
+ writeln(configfile,'thumbnail size='+l2s(thumbnail_width)+','+l2s(thumbnail_height));
+ writeln(configfile,'trim image list='+bool2s(trim_image_list));
+ writeln(configfile,'trim image list count='+l2s(trim_image_list_count));
+ writeln(configfile,'window coords='+l2s(window_coords[0])+','+l2s(window_coords[1])+','+l2s(window_coords[2])+','+l2s(window_coords[3])+','+bool2s(window_maximised));
  if font_override then begin
   get_listview_font(s,fontsize,fontstyle);
-  writeln(t,'list font='+fontstr(s,fontsize,fontstyle,false));
+  writeln(configfile,'list font='+fontstr(s,fontsize,fontstyle,false));
  end;
- writeln(t,'app update='+l2s(last_successful_app_update_check)+','+l2s(app_update_attempt_count));
- if no_img_desc then writeln(t,'no image description=1');
- if not cache_thumbnails then writeln(t,'cache thumbnails=0');
- close(t);
+ writeln(configfile,'app update='+l2s(last_successful_app_update_check)+','+l2s(app_update_attempt_count));
+ if no_img_desc then writeln(configfile,'no image description=1');
+ if not cache_thumbnails then writeln(configfile,'cache thumbnails=0');
+ close(configfile);
  if ioresult=0 then begin
-  deletefile(PChar(filename));
-  renamefile(tempname,filename);
+  sysutils.DeleteFile(filename);
+  RenameFile(tempname,filename);
  end;
+
+ {$ifdef filelock}
+ system.assign(configfile,filename);
+ filemode:=fmOpenRead or fmShareExclusive;
+ reset(configfile);
+ ioresult;
+ {$endif}
 end;
 
 procedure read_images_file;
 var
-  filename,line,param,value,twitter_id,twitter_url,title,hashtags,localfile,imgur_id,imgur_url:string;
-  timestamp:longint;
+  filename,line,param,value,twitter_id,twitter_url,title,hashtags,localfile,imgur_id,imgur_url,imgur_deletehash:string;
+  timestamp:longint=0;
   t:text;
   section:boolean=false;
+  deleted:boolean=false;
 
  procedure addimage;
  var l:longint;
@@ -466,7 +511,10 @@ var
    img_list[l].local_file:=localfile;
    img_list[l].imgur_id:=imgur_id;
    img_list[l].imgur_url:=imgur_url;
+   img_list[l].imgur_deletehash:=imgur_deletehash;
    img_list[l].imglist_num:=-1;
+   img_list[l].listview_index:=-1;
+   img_list[l].deleted:=deleted;
   end;
   timestamp:=0;
   twitter_id:='';
@@ -476,6 +524,8 @@ var
   localfile:='';
   imgur_id:='';
   imgur_url:='';
+  imgur_deletehash:='';
+  deleted:=false;
  end;
 
 begin
@@ -483,6 +533,7 @@ begin
  filemode:=0;
  assign(t,filename);
  reset(t);
+ system.EnterCriticalSection(img_list_CS);
  while not eof(t) do begin
   readln(t,line);
   if ioresult<>0 then break;
@@ -498,11 +549,14 @@ begin
     else if param='hashtags' then hashtags:=value
     else if param='local file' then localfile:=value
     else if param='imgur id' then imgur_id:=value
-    else if param='imgur url' then imgur_url:=value;
+    else if param='imgur url' then imgur_url:=value
+    else if param='imgur deletehash' then imgur_deletehash:=value
+    else if param='deleted' then deleted:=value='1';
    end;
   end;
  end;
  addimage;
+ system.LeaveCriticalSection(img_list_CS);
  close(t);
  ioresult;
 end;
@@ -518,6 +572,7 @@ begin
  if not DirectoryExists(configdir) then ForceDirectories(configdir);
  assign(t,tempname);
  rewrite(t);
+ system.EnterCriticalSection(img_list_CS);
  for l:=0 to img_list_count-1 do begin
   writeln(t,'[image]');
   writeln(t,'twitter id='+img_list[l].twitter_media_id);
@@ -528,12 +583,15 @@ begin
   writeln(t,'local file='+img_list[l].local_file);
   writeln(t,'imgur id='+img_list[l].imgur_id);
   writeln(t,'imgur url='+img_list[l].imgur_url);
+  if img_list[l].imgur_deletehash<>'' then writeln(t,'imgur deletehash='+img_list[l].imgur_deletehash);
+  if img_list[l].deleted then writeln(t,'deleted=1');
   writeln(t);
  end;
+ system.LeaveCriticalSection(img_list_CS);
  close(t);
  if ioresult=0 then begin
-  deletefile(PChar(filename));
-  renamefile(tempname,filename);
+  sysutils.DeleteFile(filename);
+  RenameFile(tempname,filename);
  end;
 end;
 
@@ -855,7 +913,6 @@ var
   tempbmp:TBGRABitmap=nil;
   xscale,yscale:real;
   newwidth,newheight:longint;
-  idptr:^string=nil;
 begin
  result:=true;
  try
@@ -884,6 +941,11 @@ begin
  end;
 end;
 
+function thumbcache(imgname:string):string;
+begin
+ result:=ChangeFileExt(thumbsdir+'thumb_'+imgname,'.png'); // always save thumbnails as png
+end;
+
 function load_image_thumbnails(p:pointer):ptrint; // secondary thread
 var
   l:longint;
@@ -902,7 +964,7 @@ begin
   id:='';
   localfile:='';
   system.EnterCriticalSection(img_list_CS);
-  for l:=0 to img_list_count-1 do if (img_list[l].local_file<>'') and (img_list[l].imglist_num<0) and (img_list[l].flags and job_flag_thumbnail_tried=0) then begin
+  for l:=0 to img_list_count-1 do if (not img_list[l].deleted) and (img_list[l].listview_index>=0) and (img_list[l].local_file<>'') and (img_list[l].imglist_num<0) and (img_list[l].flags and job_flag_thumbnail_tried=0) then begin
    id:=img_list[l].twitter_media_id;
    localfile:=img_list[l].local_file;
    img_list[l].flags:=img_list[l].flags or job_flag_thumbnail_tried;
@@ -922,7 +984,7 @@ begin
   end else begin
    success:=false;
    cache:=cache_thumbnails;
-   cachefile:=ChangeFileExt(thumbsdir+'thumb_'+localfile,'.png'); // always save thumbnails as png
+   cachefile:=thumbcache(localfile);
    repeat
     try
      if cache then begin
@@ -1089,6 +1151,7 @@ begin
  fillchar(twitter_thread,sizeof(thread_info),0);
  fillchar(imgur_thread,sizeof(thread_info),0);
  fillchar(thumbnail_thread,sizeof(thread_info),0);
+ fillchar(update_thread,sizeof(thread_info),0);
 
  program_update_last_check:=0;
 

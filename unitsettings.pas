@@ -1,4 +1,4 @@
-// Copyright 2014, 2015, 2016 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
+// Copyright 2014-2017 Dr C (drcpsn@hotmail.com | https://twitter2imgur.github.io/twitter2imgur/)
 //
 // This file is part of Twitter2Imgur.
 //
@@ -37,11 +37,14 @@ type
     ButtonImgurAccount: TButton;
     ButtonTwitterAccount: TButton;
     ButtonImgurClear: TButton;
+    CheckBoxShowDelete: TCheckBox;
+    CheckBoxTrimImageList: TCheckBox;
     CheckBoxUseTray: TCheckBox;
     CheckBoxAutoFetch: TCheckBox;
     CheckBoxAlwaysOnTop: TCheckBox;
     ComboBoxURLMode: TComboBox;
     ComboBoxDefaultAction: TComboBox;
+    EditTrimImageListCount: TEdit;
     EditAutoUpdateMins: TEdit;
     EditImageSizeX: TEdit;
     EditImageSizeY: TEdit;
@@ -75,6 +78,7 @@ type
     procedure ButtonTwitterAccountClick(Sender: TObject);
     procedure ButtonTwitterClearClick(Sender: TObject);
     procedure CheckBoxAutoFetchChange(Sender: TObject);
+    procedure CheckBoxTrimImageListChange(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure RadioButtonAlbumChange(Sender: TObject);
   private
@@ -118,12 +122,16 @@ begin
   FormSettings.ButtonImgurClear.Enabled:=true;
  end else begin
   FormSettings.LabelImgurAccount.Font.Style:=[];
-  FormSettings.LabelImgurAccount.Caption:='<None>';
+  FormSettings.LabelImgurAccount.Caption:='<Anonymous>';
   FormSettings.ButtonImgurClear.Enabled:=false;
  end;
 
+ FormSettings.RadioButtonAlbum.Enabled:=imgur_screenname<>'';
+ FormSettings.RadioButtonAutoAlbum.Enabled:=imgur_screenname<>'';
+ FormSettings.EditAlbum.Enabled:=FormSettings.RadioButtonAlbum.Checked and (imgur_screenname<>'');
+
  FormSettings.EditAutoUpdateMins.Enabled:=FormSettings.CheckBoxAutoFetch.Checked;
- FormSettings.EditAlbum.Enabled:=FormSettings.RadioButtonAlbum.Checked;
+ FormSettings.EditTrimImageListCount.Enabled:=FormSettings.CheckBoxTrimImageList.Checked;
  FormSettings.ButtonFont.Caption:=fontstr(font_name,font_size,font_style,true);
 end;
 
@@ -140,8 +148,11 @@ begin
  RadioButtonAutoAlbum.Checked:=auto_upload_album;
  CheckBoxAlwaysOnTop.Checked:=always_on_top;
  CheckBoxUseTray.Checked:=use_systray;
+ CheckBoxShowDelete.Checked:=allow_image_delete;
  if (default_action>=0) and (default_action<=2) then ComboBoxDefaultAction.ItemIndex:=default_action;
  if (url_mode>=0) and (url_mode<=1) then ComboBoxURLMode.ItemIndex:=url_mode;
+ CheckBoxTrimImageList.Checked:=trim_image_list;
+ EditTrimImageListCount.Text:=l2s(trim_image_list_count);
  EditImageSizeX.Text:=l2s(thumbnail_width);
  EditImageSizeY.Text:=l2s(thumbnail_height);
  set_settings_form_control_states;
@@ -175,6 +186,11 @@ begin
 end;
 
 procedure TFormSettings.CheckBoxAutoFetchChange(Sender: TObject);
+begin
+ set_settings_form_control_states;
+end;
+
+procedure TFormSettings.CheckBoxTrimImageListChange(Sender: TObject);
 begin
  set_settings_form_control_states;
 end;
@@ -235,6 +251,10 @@ begin
  auto_upload_album:=not FormSettings.RadioButtonAlbum.Checked;
  always_on_top:=CheckBoxAlwaysOnTop.Checked;
  use_systray:=CheckBoxUseTray.Checked;
+ allow_image_delete:=CheckBoxShowDelete.Checked;
+ FormMain.MenuItemSeparator2.Visible:=allow_image_delete;
+ FormMain.MenuItemDelete.Visible:=allow_image_delete;
+
  if always_on_top then begin
   FormMain.FormStyle:=fsSystemStayOnTop;
   FormSettings.FormStyle:=fsSystemStayOnTop;
@@ -270,6 +290,13 @@ begin
   init_thumbnail_imagelist;
  end;
 
+ trim_image_list:=CheckBoxTrimImageList.Checked;
+ if s2l(EditTrimImageListCount.Text,x) then begin
+  if x<1 then trim_image_list_count:=1
+  else if x>1000000 then trim_image_list_count:=1000000
+  else trim_image_list_count:=x;
+ end;
+
  if font_reset then begin
   font_override:=false;
   FormMain.ListViewFiles.Font.Name:='default';
@@ -284,7 +311,7 @@ begin
  end;
 
  write_config_file;
- populate_mainform_listview;
+ populate_mainform_listview(false);
  Close;
 end;
 
@@ -305,10 +332,14 @@ begin
  font_style:=default_font_style;
  font_reset:=true;
 
+ CheckBoxTrimImageList.Checked:=false;
+ EditTrimImageListCount.Text:='100';
+
  ComboBoxURLMode.ItemIndex:=0;
  ComboBoxDefaultAction.ItemIndex:=0;
  CheckBoxAlwaysOnTop.Checked:=false;
  CheckBoxUseTray.Checked:=false;
+ CheckBoxShowDelete.Checked:=true;
 
  set_settings_form_control_states;
 end;

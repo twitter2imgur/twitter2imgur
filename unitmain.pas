@@ -1,4 +1,4 @@
-// Copyright 2014, 2015, 2016 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
+// Copyright 2014-2017 Dr C (drcpsn@hotmail.com | https://twitter2imgur.github.io/twitter2imgur/)
 //
 // This file is part of Twitter2Imgur.
 //
@@ -43,6 +43,8 @@ type
     LabelProgress: TLabel;
     LabelStatusBar2: TLabel;
     ListViewFiles: TListView;
+    MenuItemSeparator2: TMenuItem;
+    MenuItemDelete: TMenuItem;
     MenuItemFetch: TMenuItem;
     MenuItemShow: TMenuItem;
     MenuItemExit: TMenuItem;
@@ -72,10 +74,12 @@ type
     procedure ListViewFilesContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
     procedure ListViewFilesCustomDrawItem(Sender: TCustomListView; Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
     procedure ListViewFilesDblClick(Sender: TObject);
+    procedure ListViewFilesKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure ListViewFilesKeyPress(Sender: TObject; var Key: char);
     procedure ListViewFilesResize(Sender: TObject);
     procedure ListViewFilesSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
     procedure MenuItemCopyURLClick(Sender: TObject);
+    procedure MenuItemDeleteClick(Sender: TObject);
     procedure MenuItemExitClick(Sender: TObject);
     procedure MenuItemFetchClick(Sender: TObject);
     procedure MenuItemOpenFolderClick(Sender: TObject);
@@ -96,7 +100,8 @@ type
   end;
 
 procedure set_main_form_control_states;
-procedure populate_mainform_listview;
+procedure populate_mainform_listview(reset_scroll:boolean);
+function get_item_url(num:longint;orig,trim_protocol:boolean):string;
 
 var
   FormMain: TFormMain;
@@ -104,7 +109,7 @@ var
 
 implementation
 
-uses unitsettings, lclintf, http, clipbrd, synacode, BGRABitmap, unitabout;
+uses unitsettings, lclintf, http, clipbrd, BGRABitmap, unitabout, unitdeleteimage;
 
 {$R *.lfm}
 
@@ -133,6 +138,7 @@ begin
   local_file:='';
   imgur_id:='';
   imgur_url:='';
+  imgur_deletehash:='';
   errorinfo:='';
  end;
  if img_list_alloc>0 then freemem(img_list,img_list_alloc*sizeof(img_list_type));
@@ -144,6 +150,13 @@ begin
  if imgur_album_alloc>0 then freemem(imgur_albums,imgur_album_alloc*sizeof(imgur_album_type));
 
  system.DoneCriticalSection(img_list_CS);
+
+ {$ifdef filelock}
+ {$I-}
+ close(configfile);
+ ioresult;
+ {$I+}
+ {$endif}
 end;
 
 function get_selected_file(var i:integer):boolean;
@@ -153,18 +166,23 @@ begin
  i:=-1;
  li:=FormMain.ListViewFiles.Selected;
  if li<>nil then begin
-  i:=li.Index;
+//  i:=li.Index;
+  i:=ptrint(li.Data);
   result:=true;
  end;
 end;
 
-function get_item_url(num:longint;orig:boolean):string;
+function get_item_url(num:longint;orig,trim_protocol:boolean):string;
 begin
  if img_list[num].imgur_url<>'' then begin
   if url_mode=1 then result:=img_list[num].imgur_url else result:='http://imgur.com/'+img_list[num].imgur_id;
  end else begin
   result:=img_list[num].twitter_url;
   if orig then result:=result+':orig';
+ end;
+ if trim_protocol then begin
+  if lowercase(copy(result,1,7))='http://' then delete(result,1,7)
+  else if lowercase(copy(result,1,8))='https://' then delete(result,1,8);
  end;
 end;
 
@@ -183,10 +201,10 @@ end;
 procedure run_action(item,runtype:integer);
 begin
  if (item>=0) and (item<img_list_count) then begin
-  if runtype=0 then OpenURL(get_item_url(item,true))
+  if runtype=0 then OpenURL(get_item_url(item,true,false))
   else if runtype=1 then begin
    if img_list[item].local_file<>'' then OpenDocument(imagesdir+img_list[item].local_file);
-  end else if runtype=2 then Clipboard.AsText:=get_item_url(item,true);
+  end else if runtype=2 then Clipboard.AsText:=get_item_url(item,true,false);
  end;
 end;
 
@@ -199,33 +217,46 @@ begin
  FormMain.ButtonUpdate.Enabled:=(not jobs_in_progress) or buttonstate;
 end;
 
-procedure populate_mainform_listview;
+procedure populate_mainform_listview(reset_scroll:boolean);
 var
-  l:longint;
+  l:longint=0;
+  itemcount:longint=0;
+  limit:longint;
   li:TListItem;
-  s:string;
   thumbnail_update_wanted:boolean;
 begin
  thumbnail_update_wanted:=false;
  system.EnterCriticalSection(img_list_CS);
- for l:=0 to img_list_count-1 do begin
-  if l>=FormMain.ListViewFiles.Items.Count then li:=FormMain.ListViewFiles.Items.Add
-  else li:=FormMain.ListViewFiles.Items[l];
 
-  if img_list[l].imglist_num>=0 then li.ImageIndex:=img_list[l].imglist_num
-//  else if img_list[l].flags and job_flag_error<>0 then li.ImageIndex:=img_error
-  else begin
-   if img_list[l].local_file<>'' then thumbnail_update_wanted:=true;
-   li.ImageIndex:=img_default;
-  end;
-   s:=get_item_url(l,false);
-   if lowercase(copy(s,1,7))='http://' then delete(s,1,7)
-   else if lowercase(copy(s,1,8))='https://' then delete(s,1,8);
-  li.Caption:=''; // force redraw
-  li.Caption:='  '+s;
+ limit:=img_list_count;
+ if trim_image_list and (trim_image_list_count<limit) then limit:=trim_image_list_count;
+
+ if (FormMain.ListViewFiles.Items.Count>0) and (reset_scroll or (limit<FormMain.ListViewFiles.Items.Count)) then FormMain.ListViewFiles.Items[0].MakeVisible(false); // scrolls to top
+
+ for l:=0 to img_list_count-1 do begin
+  if not img_list[l].deleted then begin
+   if itemcount>=FormMain.ListViewFiles.Items.Count then li:=FormMain.ListViewFiles.Items.Add
+   else li:=FormMain.ListViewFiles.Items[itemcount];
+
+   li.Data:=pointer(l);
+   img_list[l].listview_index:=itemcount;
+
+   if img_list[l].imglist_num>=0 then li.ImageIndex:=img_list[l].imglist_num
+   else begin
+    if img_list[l].local_file<>'' then thumbnail_update_wanted:=true;
+    li.ImageIndex:=img_default;
+   end;
+   li.Caption:=''; // force redraw
+   li.Caption:='  '+get_item_url(l,false,true);
+   inc(itemcount);
+   if itemcount>=limit then break;
+  end else img_list[l].listview_index:=-1;
  end;
- for l:=img_list_count to FormMain.ListViewFiles.Items.Count-1 do FormMain.ListViewFiles.Items[l].Delete;
+ for l:=FormMain.ListViewFiles.Items.Count-1 downto itemcount do FormMain.ListViewFiles.Items[l].Delete;
+
  system.LeaveCriticalSection(img_list_CS);
+
+ FormMain.LabelFiles.Caption:='Recent images ('+l2s(FormMain.ListViewFiles.Items.Count)+')';
 
  if thumbnail_update_wanted then thread_activate(thumbnail_thread,@load_image_thumbnails);
 end;
@@ -257,8 +288,9 @@ begin
    FormAbout.FormStyle:=fsSystemStayOnTop;
   end;
   {$ifndef MSWindows}FormMain.ListViewFiles.AutoWidthLastColumn:=true;{$endif}
-  populate_mainform_listview;
+  populate_mainform_listview(false);
   formshown:=true;
+  if app_update_check and (last_app_update_check+24*60*60<unixtime) then thread_activate(update_thread,@check_for_app_updates);
  end;
  set_main_form_control_states;
 end;
@@ -308,7 +340,7 @@ procedure TFormMain.ListViewFilesCustomDrawItem(Sender: TCustomListView; Item: T
 var l:longint;
 begin
  l:=Item.Index;
- if (l>=0) and (l<img_list_count) then begin
+ if (l>=0) and (l<ListViewFiles.Items.Count) then begin
   if img_list[l].flags and job_flag_error<>0 then TCustomListView(Sender).Canvas.Font.Color:=clRed
   else if (img_list[l].imgur_id='') or (img_list[l].local_file='') then TCustomListView(Sender).Canvas.Font.Color:=clGray
   else if img_list[l].flags and job_flag_new<>0 then TCustomListView(Sender).Canvas.Font.Color:=clBlue
@@ -320,6 +352,14 @@ procedure TFormMain.ListViewFilesDblClick(Sender: TObject);
 var i:integer;
 begin
  if get_selected_file(i) then run_action(i,default_action);
+end;
+
+procedure TFormMain.ListViewFilesKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+ if Key=VK_DELETE then begin
+  if allow_image_delete then if get_selected_file(del_index) then FormDeleteImage.ShowModal;
+  Key:= 0;
+ end;
 end;
 
 procedure TFormMain.ListViewFilesKeyPress(Sender: TObject; var Key: char);
@@ -359,6 +399,11 @@ procedure TFormMain.MenuItemCopyURLClick(Sender: TObject);
 var i:integer;
 begin
  if get_selected_file(i) then run_action(i,2);
+end;
+
+procedure TFormMain.MenuItemDeleteClick(Sender: TObject);
+begin
+ if allow_image_delete then if get_selected_file(del_index) then FormDeleteImage.ShowModal;
 end;
 
 procedure TFormMain.MenuItemExitClick(Sender: TObject);
@@ -479,9 +524,9 @@ begin
     updatelist:=true;
    end;
   end;
-  if updatelist then populate_mainform_listview;
+  if updatelist then populate_mainform_listview(false);
 
-  if auto_fetch and (not buttonstate) and (not FormSettings.Showing) and (twitter_screenname<>'') and (imgur_screenname<>'') and (unixtime>=last_update+auto_fetch_mins*60) then do_fetch(true);
+  if auto_fetch and (not buttonstate) and (not FormSettings.Showing) and (twitter_screenname<>'') and (unixtime>=last_update+auto_fetch_mins*60) then do_fetch(true);
  end;
 end;
 
@@ -490,6 +535,7 @@ begin
  if twitter_thread.started then KillThread(twitter_thread.id);
  if imgur_thread.started then KillThread(imgur_thread.id);
  if thumbnail_thread.started then KillThread(thumbnail_thread.id);
+ if update_thread.started then KillThread(update_thread.id);
  OnCloseQuery:=nil;
  Close;
 end;
@@ -501,7 +547,7 @@ end;
 
 procedure TFormMain.BitBtnImgurClick(Sender: TObject);
 begin
- OpenURL('http://imgur.com/');
+ OpenURL('https://imgur.com/');
 end;
 
 procedure TFormMain.BitBtnFolderClick(Sender: TObject);
@@ -528,14 +574,14 @@ end;
 
 procedure TFormMain.ButtonUpdateClick(Sender: TObject);
 begin
- if (not buttonstate) and (not jobs_in_progress) and (twitter_screenname<>'') and (imgur_screenname<>'') then do_fetch(false)
+ if (not buttonstate) and (not jobs_in_progress) and (twitter_screenname<>'') then do_fetch(false)
  else if buttonstate then begin // Cancel
   if Sender<>MenuItemFetch then begin
    twitter_thread.abort:=true;
    imgur_thread.abort:=true;
    abort_clicked:=true;
   end;
- end else if (twitter_screenname='') or (imgur_screenname='') then MessageDlg('Missing Accounts','You need to enter your Twitter and Imgur accounts in the settings before you can fetch and upload images.',mtInformation,[mbOK],0);
+ end else if twitter_screenname='' then MessageDlg('Missing Account','You need to enter a Twitter account in the settings before you can fetch and upload images.',mtInformation,[mbOK],0);
 end;
 
 procedure TFormMain.FormChangeBounds(Sender: TObject);
@@ -566,6 +612,7 @@ begin
  if twitter_thread.started and (not twitter_thread.running) then begin twitter_thread.started:=false; CloseThread(twitter_thread.id); saveconfig:=true; end;
  if imgur_thread.started and (not imgur_thread.running) then begin imgur_thread.started:=false; CloseThread(imgur_thread.id); saveconfig:=true; end;
  if thumbnail_thread.started and (not thumbnail_thread.running) then begin thumbnail_thread.started:=false; CloseThread(thumbnail_thread.id); end;
+ if update_thread.started and (not update_thread.running) then begin update_thread.started:=false; CloseThread(update_thread.id); end;
 
  if saveconfig then begin write_images_file; write_config_file; end;
 
@@ -584,9 +631,9 @@ begin
    set_main_form_control_states;
 
    last_update:=unixtime;
-   Timer1.Interval:=5000; // hide the progress bar after 5 sec
+   Timer1.Interval:=4000; // hide the progress bar after 4 sec
    need_progressbar_hide:=true;
-   populate_mainform_listview;
+   populate_mainform_listview(false);
 
    if not tweet_fetch_success then begin
     LabelProgress.Caption:='Failed to fetch tweets!';
@@ -605,23 +652,25 @@ begin
 
    end;
    abort_clicked:=false;
-
-   if show_update_notification then begin
-    show_update_notification:=false;
-    app_update_check:=false;
-    if messagedlg(Application.Title+' Update',program_update_msg,mtConfirmation,[mbYes,mbNo],0,mbYes)=mrYes then OpenURL(program_update_url);
-    app_update_check:=true;
-    last_app_update_check:=unixtime;
-   end else if (app_update_attempt_count>=10) and (last_successful_app_update_check+60*60*24*90<unixtime) then begin // >=10 failed attempts and 90 days since last successful check
-    if last_successful_app_update_check>0 then s:=' for '+show_duration(unixtime-last_successful_app_update_check) else s:='';
-    if messagedlg(Application.Title+' Update',Application.Title+' has been unable to check for updates'+s+'. Would you like to manually check now?',mtConfirmation,[mbYes,mbNo],0,mbYes)=mrYes then OpenURL(app_url);
-    app_update_attempt_count:=0;
-    last_successful_app_update_check:=unixtime;
-   end;
   end;
  end;
 
- if want_exit and (not twitter_thread.started) and (not imgur_thread.started) and (not thumbnail_thread.started) then begin
+ if not want_exit then begin
+  if show_update_notification then begin
+   show_update_notification:=false;
+   app_update_check:=false;
+   if messagedlg(Application.Title+' Update',program_update_msg,mtConfirmation,[mbYes,mbNo],0,mbYes)=mrYes then OpenURL(program_update_url);
+   app_update_check:=true;
+   last_app_update_check:=unixtime;
+  end else if (app_update_attempt_count>=10) and (last_successful_app_update_check+60*60*24*90<unixtime) then begin // >=10 failed attempts and 90 days since last successful check
+   if last_successful_app_update_check>0 then s:=' for '+show_duration(unixtime-last_successful_app_update_check) else s:='';
+   if messagedlg(Application.Title+' Update',Application.Title+' has been unable to check for updates'+s+'. Would you like to manually check now?',mtConfirmation,[mbYes,mbNo],0,mbYes)=mrYes then OpenURL(app_url);
+   app_update_attempt_count:=0;
+   last_successful_app_update_check:=unixtime;
+  end;
+ end;
+
+ if want_exit and (not twitter_thread.started) and (not imgur_thread.started) and (not thumbnail_thread.started) and (not update_thread.started) then begin
   OnCloseQuery:=nil;
   Close;
  end;
@@ -640,7 +689,7 @@ begin
  if get_img_by_twitter_id(id^,l) then begin
   l2:=imagelist_thumbs.Add(bmp.Bitmap,nil);
   img_list[l].imglist_num:=l2;
-  ListViewFiles.Items[l].ImageIndex:=l2;
+  if (img_list[l].listview_index>=0) and (img_list[l].listview_index<ListViewFiles.Items.Count) then ListViewFiles.Items[img_list[l].listview_index].ImageIndex:=l2;
  end;
  system.LeaveCriticalSection(img_list_CS);
 
@@ -657,7 +706,7 @@ begin
   ButtonUpdate.Caption:='&Cancel';
   set_main_form_control_states;
  end;
- populate_mainform_listview;
+ populate_mainform_listview(msg.wParam<>0);
 end;
 
 procedure TFormMain.imgur_sock_onstatus(Sender:TObject;Reason:THookSocketReason;const Value:String);
@@ -682,17 +731,20 @@ begin
   TrayIcon1.Show;
   Hide;
   CanClose:=False;
- end else if twitter_thread.started or imgur_thread.started or thumbnail_thread.started then begin
-  twitter_thread.abort:=true;
-  imgur_thread.abort:=true;
-  thumbnail_thread.abort:=true;
-  want_exit:=true;
-  CanClose:=false;
-  ExitTimer:=TTimer.Create(nil);
-  ExitTimer.Interval:=10000;
-  ExitTimer.Enabled:=true;
-  ExitTimer.OnTimer:=@ExitTimerTimer;
- end else CanClose:=true;
+ end else begin
+  if update_thread.started then begin update_thread.started:=false; KillThread(update_thread.id); end;
+  if twitter_thread.started or imgur_thread.started or thumbnail_thread.started then begin
+   twitter_thread.abort:=true;
+   imgur_thread.abort:=true;
+   thumbnail_thread.abort:=true;
+   want_exit:=true;
+   CanClose:=false;
+   ExitTimer:=TTimer.Create(nil);
+   ExitTimer.Interval:=10000;
+   ExitTimer.Enabled:=true;
+   ExitTimer.OnTimer:=@ExitTimerTimer;
+  end else CanClose:=true;
+ end;
 end;
 
 procedure TFormMain.FormShortCut(var Msg: TLMKey; var Handled: Boolean);

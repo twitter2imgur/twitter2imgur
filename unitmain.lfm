@@ -1,7 +1,7 @@
 object FormMain: TFormMain
-  Left = 301
+  Left = 306
   Height = 518
-  Top = 251
+  Top = 326
   Width = 320
   Caption = 'Twitter2Imgur'
   ClientHeight = 518
@@ -16,7 +16,7 @@ object FormMain: TFormMain
   OnShow = FormShow
   OnWindowStateChange = FormWindowStateChange
   Position = poScreenCenter
-  LCLVersion = '1.6.0.4'
+  LCLVersion = '1.6.2.0'
   object ProgressBar1: TProgressBar
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = LabelProgress
@@ -124,6 +124,7 @@ object FormMain: TFormMain
     OnContextPopup = ListViewFilesContextPopup
     OnCustomDrawItem = ListViewFilesCustomDrawItem
     OnDblClick = ListViewFilesDblClick
+    OnKeyDown = ListViewFilesKeyDown
     OnKeyPress = ListViewFilesKeyPress
     OnResize = ListViewFilesResize
     OnSelectItem = ListViewFilesSelectItem
@@ -138,7 +139,7 @@ object FormMain: TFormMain
     Width = 77
     BorderSpacing.Left = 4
     BorderSpacing.Around = 4
-    Caption = 'Recent Images'
+    Caption = 'Recent images'
     ParentColor = False
   end
   object LabelStatus: TLabel
@@ -453,12 +454,12 @@ object FormMain: TFormMain
   object PopupMenuImages: TPopupMenu
     left = 56
     object MenuItemViewURL: TMenuItem
-      Caption = '&View pic (web)'
+      Caption = '&View image (web)'
       Default = True
       OnClick = MenuItemViewURLClick
     end
     object MenuItemViewLocal: TMenuItem
-      Caption = 'View &pic (local)'
+      Caption = 'View &image (local)'
       OnClick = MenuItemViewLocalClick
     end
     object MenuItemOpenFolder: TMenuItem
@@ -471,6 +472,13 @@ object FormMain: TFormMain
     object MenuItemCopyURL: TMenuItem
       Caption = '&Copy URL'
       OnClick = MenuItemCopyURLClick
+    end
+    object MenuItemSeparator2: TMenuItem
+      Caption = '-'
+    end
+    object MenuItemDelete: TMenuItem
+      Caption = '&Delete image...'
+      OnClick = MenuItemDeleteClick
     end
   end
   object Timer1: TTimer

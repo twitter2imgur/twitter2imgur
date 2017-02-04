@@ -1,4 +1,4 @@
-// Copyright 2014, 2015, 2016 Dr C (drcpsn@hotmail.com | http://twitter2imgur.github.io/twitter2imgur/)
+// Copyright 2014-2017 Dr C (drcpsn@hotmail.com | https://twitter2imgur.github.io/twitter2imgur/)
 //
 // This file is part of Twitter2Imgur.
 //
@@ -20,11 +20,11 @@ program twitter2imgur;
 {$mode objfpc}{$H+}
 
 uses
-  cmem,
   {$IFDEF UNIX}
   cthreads,
   {$ENDIF}
-  Interfaces, Forms, unitmain, unitsettings, unitabout, misc, Graphics, Dialogs, LCLVersion, ssl_openssl_lib;
+  cmem, Interfaces, Forms, unitmain, unitsettings, unitabout, misc, Graphics,
+  Dialogs, LCLVersion, ssl_openssl_lib, sysutils, unitdeleteimage;
 
 function buildinfo:string;
 begin
@@ -62,6 +62,7 @@ begin
   Application.ShowButtonGlyphs:=sbgSystem;
 
   Application.CreateForm(TFormMain, FormMain);
+  FormMain.Caption:=Application.Title{$ifdef debug}+' [Debug]'{$endif};
   FormMain.TrayIcon1.Hint:=Application.Title;
   get_listview_font(default_font_name,default_font_size,default_font_style);
   {$ifdef Darwin}
@@ -87,6 +88,9 @@ begin
   read_images_file;
   init_thumbnail_imagelist;
 
+  FormMain.MenuItemSeparator2.Visible:=allow_image_delete;
+  FormMain.MenuItemDelete.Visible:=allow_image_delete;
+
   if ssl_version='' then begin
    {$ifdef MSWindows}MessageDlg('Missing OpenSSL Libraries','OpenSSL libraries '+ssl_openssl_lib.DLLSSLName+' and '+ssl_openssl_lib.DLLUtilName{$ifdef CPU32}+' (32 bit)'{$endif}{$ifdef CPU64}+' (64 bit)'{$endif}+' could not be loaded. Twitter and Imgur operations will not work without these files.'#13#13'Installing OpenSSL yourself may fix the problem.',mtError,[mbOK],0);
    {$else}
@@ -96,7 +100,7 @@ begin
      {$else}MessageDlg('Missing OpenSSL Libraries','Twitter and Imgur operations require the OpenSSL libraries installed on your system.',mtError,[mbOK],0);{$endif}
    {$endif}
   end;
-
+  Application.CreateForm(TFormDeleteImage, FormDeleteImage);
   Application.Run;
 end.
 
